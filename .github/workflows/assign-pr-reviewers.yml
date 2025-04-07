@@ -57,10 +57,9 @@ jobs:
             assignment
             auto-pr
           reviewers: |
-            SZucchini
-            AtsushiMiyashita317
-            Rikuhei-ynwa
-            TakuyaFujimura
+            KateSawada
+            ryota-skating
+            ky116
           body: |
             users.csv を更新しました．
             
