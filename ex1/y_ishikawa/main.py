@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 from typing import Literal
 
+import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import soundfile as sf
@@ -122,38 +123,44 @@ if __name__ == "__main__":
 
     # prepare for graph
     x = np.linspace(0, audio_time, audio_frame)
-    fig, axes = plt.subplots(3, 1, figsize=(9, 6))
+    fig = plt.figure(figsize=(10, 6))
+    gs = gridspec.GridSpec(3, 2, width_ratios=[50, 1], wspace=0.05, hspace=0.7)
 
     # draw original audio signal
-    axes[0].plot(x, data)
-    axes[0].set_xlim(0, audio_time)
-    axes[0].set_ylim(-1, 1)
-    axes[0].set_xlabel("Time [s]")
-    axes[0].set_ylabel("Amplitude")
-    axes[0].set_title("Original audio signal")
+    ax1 = fig.add_subplot(gs[0, 0])
+    ax1.plot(x, data)
+    ax1.set_xlim(0, audio_time)
+    ax1.set_ylim(-1, 1)
+    ax1.set_xlabel("Time [s]")
+    ax1.set_ylabel("Amplitude")
+    ax1.set_title("Original audio signal")
 
     # draw spectrogram
-    image = axes[1].imshow(
+    ax2 = fig.add_subplot(gs[1, 0])
+    image = ax2.imshow(
         spectrogram,
         aspect="auto",
         extent=[0, audio_time, 0, nyquist_frequency // 1000],
     )
-    axes[1].set_xlim(0, audio_time)
-    axes[1].set_ylim(0, nyquist_frequency // 1000)
-    axes[1].set_xlabel("Time [s]")
-    axes[1].set_ylabel("Frequency [kHz]")
-    axes[1].set_title("Spectrogram")
-    fig.colorbar(image, ax=axes[1], format="%.0f dB")
+    ax2.set_xlim(0, audio_time)
+    ax2.set_ylim(0, nyquist_frequency // 1000)
+    ax2.set_xlabel("Time [s]")
+    ax2.set_ylabel("Frequency [kHz]")
+    ax2.set_title("Spectrogram")
+
+    # draw color bar
+    cax = fig.add_subplot(gs[1, 1])
+    fig.colorbar(image, cax=cax, format="%.0f dB")
 
     # draw re-synthesized audio signal
-    axes[2].plot(x, istft_result)
-    axes[2].set_xlim(0, audio_time)
-    axes[2].set_ylim(-1, 1)
-    axes[2].set_xlabel("Time [s]")
-    axes[2].set_ylabel("Amplitude")
-    axes[2].set_title("Re-synthesized audio signal")
+    ax3 = fig.add_subplot(gs[2, 0])
+    ax3.plot(x, istft_result)
+    ax3.set_xlim(0, audio_time)
+    ax3.set_ylim(-1, 1)
+    ax3.set_xlabel("Time [s]")
+    ax3.set_ylabel("Amplitude")
+    ax3.set_title("Re-synthesized audio signal")
 
     # show graph
-    plt.tight_layout()
     plt.savefig(result_path)
     plt.show()
