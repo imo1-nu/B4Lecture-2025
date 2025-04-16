@@ -160,8 +160,10 @@ def inv_stft(
     # get window function
     window_func = get_window_func(window, filter_length)
 
-    audio_data = []
-    for fft_result in stft_result.T:
+    step = int((1 - overlap_rate) * filter_length)
+
+    audio_data = np.zeros(original_audio_frame + filter_length)
+    for i, fft_result in enumerate(stft_result.T):
         # process IFFT
         ifft_result = np.fft.ifft(fft_result)
 
@@ -172,6 +174,6 @@ def inv_stft(
         ifft_result /= window_func
 
         # add to result
-        audio_data.extend(ifft_result)
+        audio_data[step * i: step * i + filter_length] = ifft_result
 
     return np.array(audio_data[:original_audio_frame])
