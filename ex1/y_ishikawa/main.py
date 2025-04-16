@@ -139,6 +139,7 @@ if __name__ == "__main__":
     ax2 = fig.add_subplot(gs[1, 0])
     image = ax2.imshow(
         spectrogram,
+        cmap="jet",
         aspect="auto",
         extent=[0, audio_time, 0, nyquist_frequency // 1000],
     )
