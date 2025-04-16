@@ -1,9 +1,8 @@
 import os
-from typing import List, Tuple
+from typing import List
 import pydub
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.mlab as mlab
 
 # 音声ファイルの読み込み
 def read_audio(path: str) -> np.ndarray:
@@ -126,6 +125,7 @@ def plot_waveform(audio: np.ndarray, sample_rate: int = 44100) -> None:
   plt.title('Waveform')
   plt.grid(True)
   plt.show()
+  plt.savefig() # 波形を保存
 
 # スペクトログラムを作成
 def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
@@ -140,6 +140,7 @@ def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
     plt.ylabel('Frequency (Hz)')
     plt.title('Spectrogram')
     plt.show()
+    plt.savefig() # スペクトログラムを保存
 
 # メイン関数
 def main():
