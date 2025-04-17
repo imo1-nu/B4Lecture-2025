@@ -1,12 +1,11 @@
 import numpy as np
 import soundfile as sf
-from matplotlib import gridspec as gridspec
 from matplotlib import pyplot as plt
 
 
 def stft(signal: np.ndarray, win_len: int) -> np.array:
     """
-    短時間フーリエ変換 (STFT)
+    短時間フーリエ変換 (STFT).
 
     Parameters:
         signal (np.ndarray): 音声データ
@@ -28,7 +27,7 @@ def stft(signal: np.ndarray, win_len: int) -> np.array:
 
 def istft(spectrogram: np.ndarray, win_len: int, orig_len: int) -> np.array:
     """
-    逆短時間フーリエ変換 (iSTFT)
+    逆短時間フーリエ変換 (iSTFT).
 
     Parameters:
         spectrogram (np.ndarray): スペクトログラム
@@ -41,9 +40,13 @@ def istft(spectrogram: np.ndarray, win_len: int, orig_len: int) -> np.array:
     window = np.hamming(win_len)  # ハミング窓を作成
     overlap = 0.5  # オーバラップ率
     hop_size = int(win_len * (1 - overlap))  # ホップサイズを計算
-    signal = np.zeros(int(spectrogram.shape[0] * hop_size + win_len))  # 出力信号を初期化
+    signal = np.zeros(
+        int(spectrogram.shape[0] * hop_size + win_len)
+    )  # 出力信号を初期化
     for i, spectrum in enumerate(spectrogram):
-        spectrum = np.concatenate((spectrum, np.conj(spectrum[-2:0:-1])))  # スペクトルを複素共役対称にする
+        spectrum = np.concatenate(
+            (spectrum, np.conj(spectrum[-2:0:-1]))
+        )  # スペクトルを複素共役対称にする
         frame = np.fft.ifft(spectrum).real / window  # 逆FFTを計算し、窓関数で正規化
         start = i * hop_size
         signal[start : start + win_len] += frame / 2  # オーバラップを考慮して加算
@@ -52,7 +55,7 @@ def istft(spectrogram: np.ndarray, win_len: int, orig_len: int) -> np.array:
 
 def plot_results(data, sr, spectrogram, reconstructed):
     """
-    結果をプロットする関数
+    結果をプロット.
 
     Parameters:
         data (np.ndarray): 元の音声データ
@@ -63,11 +66,20 @@ def plot_results(data, sr, spectrogram, reconstructed):
     nyquist = sr // 2  # ナイキスト周波数
     spec_dB = 20 * np.log10(np.abs(spectrogram))  # dBスケールに変換
     time = np.linspace(0, len(data) / sr, len(data))  # 時間軸を計算
-    time_spec = np.linspace(0, len(data) / sr, spectrogram.shape[0])  # スペクトログラムの時間軸を計算
+    time_spec = np.linspace(
+        0, len(data) / sr, spectrogram.shape[0]
+    )  # スペクトログラムの時間軸を計算
 
     # プロット
     fig = plt.figure(figsize=(12, 12))
-    gs = fig.add_gridspec(3, 2, width_ratios=[30, 1], height_ratios=[1, 1, 1], wspace=0.1, hspace=0.5)
+    gs = fig.add_gridspec(
+        3,
+        2,
+        width_ratios=[30, 1],
+        height_ratios=[1, 1, 1],
+        wspace=0.1,
+        hspace=0.5,
+    )
 
     # 元の信号
     ax0 = fig.add_subplot(gs[0, 0])
@@ -109,9 +121,7 @@ def plot_results(data, sr, spectrogram, reconstructed):
 
 
 def main():
-    """
-    メイン処理: STFTとiSTFTを実行し、結果をプロット・保存
-    """
+    """メイン処理: STFTとiSTFTを実行し、結果をプロット・保存."""
     data, sr = sf.read("audio.wav")  # 音声データを読み込み
     win_len = 1024  # 窓関数の長さ
 
