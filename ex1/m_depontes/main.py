@@ -75,7 +75,7 @@ class istft:
     self.frames = self.ifft()
     self.output_len = (len(self.frames) - 1) * self.frame_shift + self.frame_length
     self.reconstructed_wave = self.reconstruct_wave()
-    
+
   # iFFTを計算
   def ifft(self) -> List[np.ndarray]:
       '''
@@ -104,8 +104,10 @@ class istft:
         reconstructed[start:start + self.frame_length] += self.frames[i] * window # 窓関数によって重みづけ
         window_sum[start:start + self.frame_length] += window ** 2 # 窓関数の合計値を計算
 
-        nonzero = window_sum > 1e-10 # 窓関数の合計値が0である(=窓関数によって歪曲されてない)箇所以外を取得
-        reconstructed[nonzero] /= window_sum[nonzero] # 窓関数の合計値で割ることで、歪曲された部分を補正する
+    nonzero = window_sum > 1e-10
+    reconstructed[nonzero] /= window_sum[nonzero]
+    # 窓関数の合計値が0である(=窓関数によって歪曲されてない)箇所以外を取得
+    # 窓関数の合計値で割ることで、歪曲された部分を補正する
 
     return reconstructed
         
@@ -139,7 +141,6 @@ def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
     plt.ylabel('Frequency (Hz)')
     plt.title('Spectrogram')
     plt.show()
-    plt.savefig() # スペクトログラムを保存
 
 # メイン関数
 def main():
