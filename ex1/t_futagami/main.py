@@ -4,20 +4,20 @@ from matplotlib import gridspec as gridspec
 from matplotlib import pyplot as plt
 
 
-def stft(signal: np.ndarray, win_len: int, overlap: float) -> np.array:
+def stft(signal: np.ndarray, win_len: int) -> np.array:
     """
     短時間フーリエ変換 (STFT)
 
     Parameters:
         signal (np.ndarray): 音声データ
         win_len (int): 窓関数の長さ
-        overlap (float): オーバラップ率 (0.0 ~ 1.0)
 
     Returns:
         np.ndarray: スペクトログラム
     """
     spectrogram = []
     window = np.hamming(win_len)  # ハミング窓を作成
+    overlap = 0.5  # オーバラップ率
     hop_size = int(win_len * (1 - overlap))  # ホップサイズを計算
     for i in range(0, len(signal) - win_len, hop_size):
         frame = signal[i : i + win_len] * window  # 窓関数を適用
@@ -26,27 +26,27 @@ def stft(signal: np.ndarray, win_len: int, overlap: float) -> np.array:
     return np.array(spectrogram)
 
 
-def istft(spectrogram: np.ndarray, win_len: int, overlap: float, orig_len: int) -> np.array:
+def istft(spectrogram: np.ndarray, win_len: int, orig_len: int) -> np.array:
     """
     逆短時間フーリエ変換 (iSTFT)
 
     Parameters:
         spectrogram (np.ndarray): スペクトログラム
         win_len (int): 窓関数の長さ
-        overlap (float): オーバラップ率 (0.0 ~ 1.0)
         orig_len (int): 元の音声データの長さ
 
     Returns:
         np.ndarray: 再構成された音声データ
     """
     window = np.hamming(win_len)  # ハミング窓を作成
+    overlap = 0.5  # オーバラップ率
     hop_size = int(win_len * (1 - overlap))  # ホップサイズを計算
     signal = np.zeros(int(spectrogram.shape[0] * hop_size + win_len))  # 出力信号を初期化
     for i, spectrum in enumerate(spectrogram):
         spectrum = np.concatenate((spectrum, np.conj(spectrum[-2:0:-1])))  # スペクトルを複素共役対称にする
         frame = np.fft.ifft(spectrum).real / window  # 逆FFTを計算し、窓関数で正規化
         start = i * hop_size
-        signal[start : start + win_len] = frame  # フレームを重ね合わせる
+        signal[start : start + win_len] += frame / 2  # オーバラップを考慮して加算
     return signal[:orig_len]  # 元の長さに切り詰めて返す
 
 
@@ -113,14 +113,13 @@ def main():
     """
     data, sr = sf.read("audio.wav")  # 音声データを読み込み
     win_len = 1024  # 窓関数の長さ
-    overlap = 0.5  # 窓の重なり率
 
     # STFTを実行
-    fft_results = stft(data, win_len, overlap)
+    fft_results = stft(data, win_len)
     # スペクトログラムを計算
     spectrogram = fft_results[:, : win_len // 2 + 1]  # ナイキスト周波数までの部分を取得
     # iSTFTを実行
-    reconstructed = istft(spectrogram, win_len, overlap, len(data))
+    reconstructed = istft(spectrogram, win_len, len(data))
     # 結果を表示
     plot_results(data, sr, spectrogram, reconstructed)
 
