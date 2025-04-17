@@ -80,9 +80,10 @@ def plot_results(data, sr, spectrogram, reconstructed):
     # スペクトログラム
     ax1 = fig.add_subplot(gs[1, 0])
     img = ax1.imshow(
-        np.flipud(spec_dB.T),
+        spec_dB.T,
         cmap="jet",
         aspect="auto",
+        origin="lower",
         vmin=-60,
         vmax=30,
         extent=[time_spec[0], time_spec[-1], 0, nyquist],
