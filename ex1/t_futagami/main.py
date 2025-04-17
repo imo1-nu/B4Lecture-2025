@@ -1,72 +1,132 @@
-from matplotlib import pyplot as plt
 import numpy as np
 import soundfile as sf
-import librosa
+from matplotlib import gridspec as gridspec
+from matplotlib import pyplot as plt
 
-def stft (audio_data: np.array, window_len: int, overlap_rate: float):
-    spec = []
-    window_func = np.hamming(window_len)
-    step = window_len * (1 - overlap_rate)
-    for i in range(0, len(audio_data) - window_len, int(step)):
-        frame = audio_data[i:i + window_len] * window_func
-        spectrum = np.fft.fft(frame)
-        spectrum = spectrum[spectrum.shape[0] // 2:]
-        spec.append(spectrum)
-    print(f"fft.size: {len(spec[0])}")
-    return np.array(spec)
 
-def istft (spec: np.array, window_len: int, overlap_rate: float, original_len: int):
-    window_func = np.hamming(window_len)
-    step = window_len * (1 - overlap_rate)
-    audio_data = np.zeros(int(len(spec) * step + window_len))
-    for i in range(0, len(spec)):
-        spectrum = np.concatenate((spec[i], np.conj(spec[i][::-1])))
-        ifft_frame = np.fft.ifft(spectrum)
-        ifft_frame = ifft_frame / window_func
-        start = int(i * step)
-        audio_data[start:start + window_len] += ifft_frame.real
-    return audio_data[:original_len]
+def stft(signal: np.ndarray, win_len: int, overlap: float) -> np.array:
+    """
+    短時間フーリエ変換 (STFT)
 
-def main():
-    data, sample_rate = sf.read("audio.wav")
-    nyquist_freq = sample_rate // 2
-    window_len = 1024
-    overlap_rate = 0.5
-    spec = stft(data, window_len, overlap_rate)
-    audio_reconstructed = istft(spec, window_len, overlap_rate, len(data))
-    spec_dB = 20 * np.log10(np.abs(spec))
+    Parameters:
+        signal (np.ndarray): 音声データ
+        win_len (int): 窓関数の長さ
+        overlap (float): オーバラップ率 (0.0 ~ 1.0)
 
-    fig, axes = plt.subplots(3, 1, figsize=(12, 8))
-    fig.subplots_adjust(hspace=0.5)
+    Returns:
+        np.ndarray: スペクトログラム
+    """
+    spectrogram = []
+    window = np.hamming(win_len)  # ハミング窓を作成
+    hop_size = int(win_len * (1 - overlap))  # ホップサイズを計算
+    for i in range(0, len(signal) - win_len, hop_size):
+        frame = signal[i : i + win_len] * window  # 窓関数を適用
+        spectrum = np.fft.fft(frame)  # FFTを計算
+        spectrogram.append(spectrum)  # スペクトログラムに追加
+    return np.array(spectrogram)
 
-    x = np.linspace(0, len(data) / sample_rate, len(data))
-    axes[0].plot(x, data)
-    axes[0].set_title("Original Signal")
-    axes[0].set_xlabel("Time [s]")
-    axes[0].set_ylabel("Amplitude")
 
-    im = axes[1].imshow(
-        spec_dB.T,
+def istft(spectrogram: np.ndarray, win_len: int, overlap: float, orig_len: int) -> np.array:
+    """
+    逆短時間フーリエ変換 (iSTFT)
+
+    Parameters:
+        spectrogram (np.ndarray): スペクトログラム
+        win_len (int): 窓関数の長さ
+        overlap (float): オーバラップ率 (0.0 ~ 1.0)
+        orig_len (int): 元の音声データの長さ
+
+    Returns:
+        np.ndarray: 再構成された音声データ
+    """
+    window = np.hamming(win_len)  # ハミング窓を作成
+    hop_size = int(win_len * (1 - overlap))  # ホップサイズを計算
+    signal = np.zeros(int(spectrogram.shape[0] * hop_size + win_len))  # 出力信号を初期化
+    for i, spectrum in enumerate(spectrogram):
+        frame = np.fft.ifft(spectrum).real / window  # 逆FFTを計算し、窓関数で正規化
+        start = i * hop_size
+        signal[start : start + win_len] = frame  # フレームを重ね合わせる
+    return signal[:orig_len]  # 元の長さに切り詰めて返す
+
+
+def plot_results(data, sr, spectrogram, reconstructed):
+    """
+    結果をプロットする関数
+
+    Parameters:
+        data (np.ndarray): 元の音声データ
+        sr (int): サンプリング周波数
+        spectrogram (np.ndarray): スペクトログラム
+        reconstructed (np.ndarray): 再構成された音声データ
+    """
+    nyquist = sr // 2  # ナイキスト周波数
+    spectrogram = spectrogram.T  # 転置して周波数を行、時間を列にする
+    spectrogram = spectrogram[spectrogram.shape[0] // 2 :]  # ナイキスト周波数以上の成分を削除
+    spec_dB = 20 * np.log10(np.abs(spectrogram))  # dBスケールに変換
+    time = np.linspace(0, len(data) / sr, len(data))  # 時間軸を計算
+    time_spec = np.linspace(0, len(data) / sr, spectrogram.shape[0])  # スペクトログラムの時間軸を計算
+
+    # プロット
+    fig = plt.figure(figsize=(12, 12))
+    gs = fig.add_gridspec(3, 2, width_ratios=[30, 1], height_ratios=[1, 1, 1], wspace=0.1, hspace=0.5)
+
+    # 元の信号
+    ax0 = fig.add_subplot(gs[0, 0])
+    ax0.plot(time, data)
+    ax0.set_xlim(time[0], time[-1])
+    ax0.set_title("Original Signal")
+    ax0.set_xlabel("Time [s]")
+    ax0.set_ylabel("Amplitude")
+
+    # スペクトログラム
+    ax1 = fig.add_subplot(gs[1, 0])
+    img = ax1.imshow(
+        spec_dB,
         cmap="jet",
         aspect="auto",
         vmin=-60,
         vmax=30,
-        extent=[0, len(data) / sample_rate, 0, nyquist_freq],
+        extent=[time_spec[0], time_spec[-1], 0, nyquist],
     )
-    axes[1].set_title("Spectrogram")
-    axes[1].set_xlabel("Time [s]")
-    axes[1].set_ylabel("Frequency [Hz]")
-    axes[1].set_xlim(0, len(data) / sample_rate)
-    axes[1].set_ylim(0, nyquist_freq)
-    plt.colorbar(mappable=im, ax=axes[1])
+    ax1.set_xlim(time_spec[-0], time_spec[-1])
+    ax1.set_title("Spectrogram")
+    ax1.set_xlabel("Time [s]")
+    ax1.set_ylabel("Frequency [Hz]")
 
-    axes[2].plot(x, audio_reconstructed)
-    axes[2].set_title("Reconstructed Signal")
-    axes[2].set_xlabel("Time [s]")
-    axes[2].set_ylabel("Amplitude")
-    plt.tight_layout()
+    # カラーバー
+    cbar_ax = fig.add_subplot(gs[1, 1])
+    plt.colorbar(img, cax=cbar_ax, format="%+2.0f dB")
+
+    # 再構成された信号
+    ax2 = fig.add_subplot(gs[2, 0])
+    ax2.plot(time, reconstructed)
+    ax2.set_xlim(time[0], time[-1])
+    ax2.set_title("Reconstructed Signal")
+    ax2.set_xlabel("Time [s]")
+    ax2.set_ylabel("Amplitude")
+
+    plt.tight_layout()  # プロットのレイアウトを調整
     plt.show()
 
-    sf.write("audio_reconstructed.wav", audio_reconstructed, sample_rate)
+
+def main():
+    """
+    メイン処理: STFTとiSTFTを実行し、結果をプロット・保存
+    """
+    data, sr = sf.read("audio.wav")  # 音声データを読み込み
+    win_len = 1024  # 窓関数の長さ
+    overlap = 0.5  # 窓の重なり率
+
+    # STFTを実行
+    spectrogram = stft(data, win_len, overlap)
+    # iSTFTを実行
+    reconstructed = istft(spectrogram, win_len, overlap, len(data))
+    # スペクトログラムからナイキスト周波数以上の成分を削除
+    # 結果をプロット
+    plot_results(data, sr, spectrogram, reconstructed)
+
+    # 再構成された音声を保存
+    sf.write("audio_reconstructed.wav", reconstructed, sr)
+
 
 main()
