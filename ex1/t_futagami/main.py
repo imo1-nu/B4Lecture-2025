@@ -1,3 +1,9 @@
+"""
+このモジュールは、音声信号に対して短時間フーリエ変換 (STFT) とその逆変換 (iSTFT) を適用する機能を提供します.
+
+また、スペクトログラムを生成し、元の音声信号を再構成する機能や、その結果をプロットする機能も含まれています.
+"""
+
 import numpy as np
 import soundfile as sf
 from matplotlib import pyplot as plt
