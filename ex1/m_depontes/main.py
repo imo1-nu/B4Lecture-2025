@@ -112,7 +112,7 @@ class istft:
 ###
 
 # 波形をプロットする関数
-def plot_waveform(audio: np.ndarray, title:str, file_name:str, sample_rate: int = 44100) -> None:
+def plot_waveform(audio: np.ndarray, title:str, sample_rate: int = 44100) -> None:
   """
   入力：音声データのnumpy配列、サンプリングレート
   出力：なし（波形を表示）
@@ -125,7 +125,6 @@ def plot_waveform(audio: np.ndarray, title:str, file_name:str, sample_rate: int 
   plt.title(title)
   plt.grid(True)
   plt.show()
-  plt.savefig(file_name) # 波形を保存
 
 # スペクトログラムを作成
 def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
@@ -144,25 +143,24 @@ def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
 
 # メイン関数
 def main():
-    audio = read_audio("case1-ref.wav") # wavファイルを読み込み
-    plot_waveform(audio,"original wave", "original_wave") # 波形をプロット
+    audio = read_audio("case1-ref.wav")
+    plot_waveform(audio,"original wave")
 
     sample_rate = 44100
     frame_length = 1024
     frame_shift = 512
-    spectrogram = []
 
-    # STFTを計算・スペクトログラムを作成
+    spectrogram = []
     stft_instance = stft(audio, frame_length, frame_shift, sample_rate)
+
     spectrogram, times, freqs = stft_instance.spectrogram, stft_instance.times, stft_instance.freqs
 
-    make_spectrogram(np.abs(spectrogram[:frame_length//2]), times, freqs) 
-    # [:frame_length//2]でスペクトログラムのうち正の周波数成分のみを切り出し
+    make_spectrogram(20 * np.log10(np.abs(spectrogram[:frame_length//2])), times, freqs)
 
-    # ISTFTを計算・波形を再構築
     istft_instance = istft(spectrogram, frame_length, frame_shift, sample_rate)
     reconstructed_wave = istft_instance.reconstructed_wave
 
-    plot_waveform(reconstructed_wave, "reconstructed wave", "reconstructed_wave") # 再構築した波形をプロット
+    plot_waveform(reconstructed_wave, "reconstructed wave")
 
-main()
+if __name__ == "__main__":
+    main()
