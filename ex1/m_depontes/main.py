@@ -156,7 +156,7 @@ def main():
 
     spectrogram, times, freqs = stft_instance.spectrogram, stft_instance.times, stft_instance.freqs
 
-    make_spectrogram(20 * np.log10(np.abs(spectrogram[:frame_length//2])), times, freqs)
+    make_spectrogram(20 * np.log10(np.abs(spectrogram[:,:frame_length//2])), times, freqs)
 
     istft_instance = istft(spectrogram, frame_length, frame_shift, sample_rate)
     reconstructed_wave = istft_instance.reconstructed_wave
