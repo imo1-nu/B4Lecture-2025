@@ -22,7 +22,7 @@ def stft(signal: np.ndarray, win_len: int, overlap: float) -> np.array:
     for i in range(0, len(signal) - win_len, hop_size):
         frame = signal[i : i + win_len] * window  # 窓関数を適用
         spectrum = np.fft.fft(frame)  # FFTを計算
-        spectrogram.append(spectrum)  # スペクトログラムに追加
+        spectrogram.append(spectrum)  # スペクトルを保存
     return np.array(spectrogram)
 
 
@@ -43,6 +43,7 @@ def istft(spectrogram: np.ndarray, win_len: int, overlap: float, orig_len: int) 
     hop_size = int(win_len * (1 - overlap))  # ホップサイズを計算
     signal = np.zeros(int(spectrogram.shape[0] * hop_size + win_len))  # 出力信号を初期化
     for i, spectrum in enumerate(spectrogram):
+        spectrum = np.concatenate((spectrum, np.conj(spectrum[-2:0:-1])))  # スペクトルを複素共役対称にする
         frame = np.fft.ifft(spectrum).real / window  # 逆FFTを計算し、窓関数で正規化
         start = i * hop_size
         signal[start : start + win_len] = frame  # フレームを重ね合わせる
@@ -60,8 +61,6 @@ def plot_results(data, sr, spectrogram, reconstructed):
         reconstructed (np.ndarray): 再構成された音声データ
     """
     nyquist = sr // 2  # ナイキスト周波数
-    spectrogram = spectrogram.T  # 転置して周波数を行、時間を列にする
-    spectrogram = spectrogram[spectrogram.shape[0] // 2 :]  # ナイキスト周波数以上の成分を削除
     spec_dB = 20 * np.log10(np.abs(spectrogram))  # dBスケールに変換
     time = np.linspace(0, len(data) / sr, len(data))  # 時間軸を計算
     time_spec = np.linspace(0, len(data) / sr, spectrogram.shape[0])  # スペクトログラムの時間軸を計算
@@ -81,7 +80,7 @@ def plot_results(data, sr, spectrogram, reconstructed):
     # スペクトログラム
     ax1 = fig.add_subplot(gs[1, 0])
     img = ax1.imshow(
-        spec_dB,
+        np.flipud(spec_dB.T),
         cmap="jet",
         aspect="auto",
         vmin=-60,
@@ -105,7 +104,6 @@ def plot_results(data, sr, spectrogram, reconstructed):
     ax2.set_xlabel("Time [s]")
     ax2.set_ylabel("Amplitude")
 
-    plt.tight_layout()  # プロットのレイアウトを調整
     plt.show()
 
 
@@ -118,15 +116,14 @@ def main():
     overlap = 0.5  # 窓の重なり率
 
     # STFTを実行
-    spectrogram = stft(data, win_len, overlap)
+    fft_results = stft(data, win_len, overlap)
+    # スペクトログラムを計算
+    spectrogram = fft_results[:, : win_len // 2 + 1]  # ナイキスト周波数までの部分を取得
     # iSTFTを実行
     reconstructed = istft(spectrogram, win_len, overlap, len(data))
-    # スペクトログラムからナイキスト周波数以上の成分を削除
-    # 結果をプロット
+    # 結果を表示
     plot_results(data, sr, spectrogram, reconstructed)
 
-    # 再構成された音声を保存
-    sf.write("audio_reconstructed.wav", reconstructed, sr)
 
-
-main()
+if __name__ == "__main__":
+    main()
