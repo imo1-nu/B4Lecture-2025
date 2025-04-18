@@ -18,6 +18,20 @@ def read_audio(path: str) -> np.ndarray:
 
 # stft実装クラス
 class stft:
+  ''' 短時間フーリエ変換（STFT）を実装するクラス
+
+  メンバ関数：
+    cut_audio: 音声データをフレームに切り出す関数
+    window_function: 窓関数を適用する関数
+    fft: フレームに対してFFTを計算する関数
+    
+  属性：
+    audio(np.ndarray): 音声データのnumpy配列
+    frame_length(int): フレームの長さ
+    frame_shift(int): フレームのシフト量
+    sample_rate(int): サンプリングレート
+
+  '''
   def __init__(self, audio: np.ndarray, frame_length: int, frame_shift: int, sample_rate: int):
     self.audio = audio
     self.frame_length = frame_length
@@ -31,11 +45,18 @@ class stft:
     self.times = np.arange(len(self.spectrogram)) * self.frame_shift / self.sample_rate
     self.freqs = np.fft.fftfreq(self.frame_length, d=1/self.sample_rate)[:self.frame_length//2]
 
-  # 音声データの切り出し
   def cut_audio(self) -> List[np.ndarray]:
-      '''
-      入力：音声データのnumpy配列、切り出す開始位置、終了位置
-      出力：切り出した音声データのnumpy配列の集合
+      ''' 音声データの切り出し関数
+
+      STFTにおける，時間領域での音声データの切り出し（フレームの作成）を実装する関数．
+
+      入力：
+        audio(np.ndarray): 音声データのnumpy配列
+        frame_length(int): フレームの長さ
+        frame_shift(int): フレームのシフト量
+
+      出力：
+        frames(List[np.ndarray]): 切り出した音声データのnumpy配列の集合
       '''
       frames = []
       for n in range(0,len(self.audio)-self.frame_length, self.frame_shift):
@@ -46,17 +67,28 @@ class stft:
 
   # 音声データに窓関数を適用
   def window_function(self) -> List[np.ndarray]:
-      '''
-      入力：音声データのnumpy配列
-      出力：窓関数を適用した音声データのnumpy配列の集合
+      ''' 窓関数
+
+      STFTにおける，フレームそれぞれに窓関数を適応する実装を行う関数．
+
+      入力：
+        frames(List[np.ndarray]): 音声データのnumpy配列の集合
+
+      出力：
+        __(List[np.ndarray]): 窓関数を適用した音声データのnumpy配列の集合
       '''
       return [np.hanning(len(audio)) * audio for audio in self.frames]
 
   # FFTを計算
   def fft(self) -> np.ndarray:
-      '''
-      入力：音声データのnumpy配列
-      出力：FFTの結果と周波数のnumpy配列
+      ''' FFT関数
+
+      窓関数を適応したフレームに対してFFTを計算する実装を行う関数．
+
+      入力：
+        windowed_frames(List[np.ndarray]): 音声データのnumpy配列の集合
+      出力：
+        __(List[np.ndarray]): FFTの結果のnumpy配列の集合
       '''
       if len(self.windowed_frames) == 0:
           return []
@@ -66,6 +98,19 @@ class stft:
 
 # ISTFT実装クラス
 class istft:
+  ''' 短時間フーリエ逆変換（ISTFT）を実装するクラス
+  
+  メンバ関数：
+    ifft: iFFTを計算する関数
+    reconstruct_wave: iFFTを適応した信号を利用して，元の音声データを再構築する関数
+
+  属性：
+    spectrogram(np.ndarray): スペクトログラムのnumpy配列
+    frame_length(int): フレームの長さ
+    frame_shift(int): フレームのシフト量
+    sample_rate(int): サンプリングレート
+    
+  '''
   def __init__(self, spectrogram: np.ndarray, frame_length: int, frame_shift: int, sample_rate: int):
     self.spectrogram = spectrogram
     self.frame_length = frame_length
@@ -78,20 +123,33 @@ class istft:
 
   # iFFTを計算
   def ifft(self) -> List[np.ndarray]:
-      '''
-      入力：スペクトログラムのnumpy配列
-      出力：iFFTの結果のnumpy配列
+      ''' iFFT関数
+
+      FFTを適応した信号に対して，iFFTを計算する実装を行う関数．
+
+      入力：
+        spectrogram(List[np.ndarray): スペクトログラムのnumpy配列の集合
+      出力：
+        __(List[np.ndarray]): iFFTの結果のnumpy配列
       '''
       if len(self.spectrogram) == 0:
         return []
 
       return np.array([np.fft.ifft(spec).real for spec in self.spectrogram])
 
-  # 波形の再構築
   def reconstruct_wave(self) -> List[np.ndarray]:
-    '''
-    入力：音声データのnumpy配列、切り出す開始位置、終了位置
-    出力：切り出した音声データのnumpy配列
+    ''' 波形の再構築関数
+
+    iFFTを適応した信号を利用して，元の音声データを再構築する実装を行う関数．
+
+    入力：
+      frames(List[np.ndarray]): iFFTによって再構築した音声データのnumpy配列の集合
+      output_len(int): 出力される信号の長さ
+      frame_length(int): フレームの長さ
+      frame_shift(int): フレームのシフト量
+
+    出力：
+      reconstructed(np.array): 再構築した音声データのnumpy配列
     '''
     num_frames = len(self.spectrogram) # フレーム数
     reconstructed = np.zeros(self.output_len) # 再構築する音声データの枠
@@ -113,10 +171,16 @@ class istft:
         
 ###
 
-# 波形をプロットする関数
 def plot_waveform(audio: np.ndarray, title:str, sample_rate: int = 44100) -> None:
-  """
-  入力：音声データのnumpy配列、サンプリングレート
+  """ 波形をプロットする関数
+
+  波形のnumpy配列を受け取り，時間軸を計算してプロットする関数．
+
+  入力：
+    audio(np.ndarray): 音声データのnumpy配列
+    title(str): プロットのタイトル
+    sample_rate(int): サンプリングレート
+
   出力：なし（波形を表示）
   """
   time = np.arange(0, len(audio)) / sample_rate
@@ -130,8 +194,15 @@ def plot_waveform(audio: np.ndarray, title:str, sample_rate: int = 44100) -> Non
 
 # スペクトログラムを作成
 def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
-    '''
-    入力：スペクトログラムのnumpy配列、時間軸、周波数軸
+    ''' スペクトログラムを作成する関数
+
+    入力されたスペクトログラムの値をもとに描画を行う関数．
+
+    入力：
+      spectrogram(np.ndarray): スペクトログラムのnumpy配列
+      times(List[float]): 時間軸要素の配列
+      freqs(List[float]): 周波数軸要素の配列
+
     出力：なし（スペクトログラムを表示）
     '''
     plt.imshow(spectrogram.T, aspect='auto', origin='lower',
