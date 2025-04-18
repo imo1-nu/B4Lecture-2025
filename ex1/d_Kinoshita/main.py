@@ -53,14 +53,14 @@ freqs = np.fft.rfftfreq(frame_size, 1 / sample_rate)
 # --- 描画 ---
 plt.figure(figsize=(14, 8))
 
-# ① 元の波形
+# --- 元の波形 ---
 plt.subplot(3, 1, 1)
 plt.plot(time_original, signal)
 plt.title('Original Waveform')
 plt.xlabel('Time [s]')
 plt.ylabel('Amplitude')
 
-# ② スペクトログラム（dB）
+# ---スペクトログラム ---
 plt.subplot(3, 1, 2)
 magnitude_db = 20 * np.log10(np.abs(spectrogram) + 1e-6)
 plt.imshow(magnitude_db, origin='lower', aspect='auto', cmap='viridis',
@@ -69,7 +69,7 @@ plt.title('Spectrogram (dB)')
 plt.xlabel('Time [s]')
 plt.ylabel('Frequency [Hz]')
 
-# ③ 復元された波形
+# --- 復元された波形 ---
 plt.subplot(3, 1, 3)
 plt.plot(time_reconstructed, reconstructed_signal)
 plt.title('Reconstructed Waveform (from ISTFT)')
