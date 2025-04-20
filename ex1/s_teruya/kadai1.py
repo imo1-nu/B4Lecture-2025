@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+"""
+    -STFT変換によるスペクトログラム表示とISTFT逆変換による音声復元の実装
+    -実行コマンド
+     $ python3 kadai1.py (サンプル音声blank.wavが適用されます)
+     または $ python3 kadai1.py (任意のwavファイル)
+"""
+
 import sys
 
 import matplotlib.pyplot as plt
