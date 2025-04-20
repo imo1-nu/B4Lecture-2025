@@ -21,7 +21,7 @@ window = np.hanning(frame_size)
 
 def stft(x, frame_size, hop_size, window):
     """
-    入力信号の短時間フーリエ変換 (STFT) を計算する。
+    入力信号の短時間フーリエ変換 (STFT) を計算する関数です。
 
     Parameters:
         x (numpy.ndarray): 入力信号。
@@ -42,7 +42,7 @@ def stft(x, frame_size, hop_size, window):
 
 def istft(spectrogram, frame_size, hop_size, window):
     """
-    短時間フーリエ変換 (STFT) のスペクトログラムから元の信号を再構成する (ISTFT)。
+    スペクトログラムから元の信号を再構成する逆短時間フーリエ変換 (ISTFT) の関数です。
 
     Parameters:
         spectrogram (numpy.ndarray): STFTスペクトログラム（複素数2次元配列）。
