@@ -33,7 +33,9 @@ def magphase(
     return magnitude, phase
 
 
-def mag_to_db(magnitude: np.ndarray[float]) -> np.ndarray[float]:
+def mag_to_db(
+    magnitude: np.ndarray[float], eps: float = 1e-7
+) -> np.ndarray[float]:
     """Convert magnitude to dB.
 
     Parameters
@@ -41,11 +43,15 @@ def mag_to_db(magnitude: np.ndarray[float]) -> np.ndarray[float]:
     magnitude : np.ndarray[float]
         Array containing magnitudes.
 
+    eps : float, default 1e-7
+        Small constant added to avoid taking the logarithm of zero.
+
     Returns
     -------
     db : np.ndarray[float]
         Array converted to dB scale.
     """
+    magnitude = np.clip(magnitude, eps, None)
     db = 20 * np.log10(magnitude)
 
     return db
