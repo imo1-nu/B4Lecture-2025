@@ -132,6 +132,7 @@ def inv_stft(
     filter_length: int,
     overlap_rate: float,
     window: str,
+    eps: float = 1e-7,
 ) -> np.ndarray:
     """Reconstruct a 1D audio signal from STFT result.
 
@@ -152,6 +153,9 @@ def inv_stft(
     window : str
         Using window function name. ("hamming", "hann", "rect")
 
+    eps : float, default 1e-7
+        Small constant added to avoid taking the logarithm of zero.
+
     Returns
     -------
     audio_data : np.ndarray
@@ -163,6 +167,7 @@ def inv_stft(
     step = int((1 - overlap_rate) * filter_length)
 
     audio_data = np.zeros(original_audio_frame + filter_length)
+    norm = np.zeros(original_audio_frame + filter_length)
     for i, fft_result in enumerate(stft_result.T):
         # process IFFT
         ifft_result = np.fft.ifft(fft_result)
@@ -170,10 +175,15 @@ def inv_stft(
         # use only real value
         ifft_result = np.real(ifft_result)
 
-        # remove window function
-        ifft_result /= window_func
+        # prepare to remove window function
+        ifft_result *= window_func
+        norm[step * i : step * i + filter_length] += window_func ** 2
 
         # add to result
-        audio_data[step * i: step * i + filter_length] = ifft_result
+        audio_data[step * i : step * i + filter_length] += ifft_result
+
+    # remove window function
+    norm = np.clip(norm, eps, None)
+    audio_data /= norm
 
     return np.array(audio_data[:original_audio_frame])
