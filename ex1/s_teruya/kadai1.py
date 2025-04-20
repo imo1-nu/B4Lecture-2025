@@ -1,8 +1,8 @@
 import sys
-import numpy as np
 import matplotlib.pyplot as plt
-from scipy.io import wavfile
+import numpy as np
 from scipy.fftpack import fft, ifft
+from scipy.io import wavfile
 from scipy.signal import get_window
 
 onlyOne = False
