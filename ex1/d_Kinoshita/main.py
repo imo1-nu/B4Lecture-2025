@@ -1,3 +1,8 @@
+"""
+STFTとISTFTによる音声信号の解析と再構成を行うスクリプト。
+音声ファイルを読み込み、スペクトログラムを表示し、逆変換して波形を復元します。
+"""
+
 import numpy as np
 import soundfile as sf
 import matplotlib.pyplot as plt
@@ -14,6 +19,18 @@ window = np.hanning(frame_size)
 
 # --- STFT ---
 def stft(x, frame_size, hop_size, window):
+    """
+    短時間フーリエ変換（Short-Time Fourier Transform）を行う関数。
+
+    Parameters:
+        x (np.ndarray): 入力信号
+        frame_size (int): フレームサイズ
+        hop_size (int): フレーム間隔
+        window (np.ndarray): 窓関数
+
+    Returns:
+        np.ndarray: スペクトログラム（周波数×時間）
+    """
     frames = []
     for i in range(0, len(x) - frame_size, hop_size):
         frame = x[i : i + frame_size] * window
@@ -24,6 +41,18 @@ def stft(x, frame_size, hop_size, window):
 
 # --- 逆STFT ---
 def istft(spectrogram, frame_size, hop_size, window):
+    """
+    逆短時間フーリエ変換（Inverse STFT）を行う関数。
+
+    Parameters:
+        spectrogram (np.ndarray): STFT で得られたスペクトログラム
+        frame_size (int): フレームサイズ
+        hop_size (int): フレーム間隔
+        window (np.ndarray): 窓関数
+
+    Returns:
+        np.ndarray: 復元された波形
+    """
     n_frames = spectrogram.shape[1]
     output_len = (n_frames - 1) * hop_size + frame_size
     output = np.zeros(output_len)
