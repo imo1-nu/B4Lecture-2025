@@ -14,7 +14,7 @@ OVERRATE = 0.5  # 0.1にすると雑音が入りやすくなりました
 def stft(
     data: np.ndarray, rate: float, trange: float = TRANGE, overrate: float = OVERRATE
 ):
-    """スペクトログラム変換 trangeは区切り間隔、overrateは左右のオーバーラップ率"""
+    """スペクトログラム変換 trangeは区切り間隔、overrateは左右のオーバーラップ率."""
     spektrem = np.array([[]])
     for i in range(int(len(data) / rate / trange)):
         # 読み出し
@@ -27,7 +27,7 @@ def stft(
                         (i + overrate + 1) * trange * rate
                     )
                 ]
-        except:
+        except IndexError:
             shortWave = data[int((i - 0.01) * trange * rate) :]
         # 変換
         # window = np.sin(np.linspace(0, 2*np.pi, len(shortwave)+2)[1:-1])    # sin窓
@@ -60,7 +60,7 @@ def istft(
     overrate: float = OVERRATE,
     limit=None,
 ):
-    """逆変換 overrateは左右のオーバーラップ率"""
+    """逆変換 overrateは左右のオーバーラップ率."""
     # window = np.sin(np.linspace(0, 2*np.pi, len(spektrem[0])+2)[1:-1])  # sin窓
     window = get_window("hann", len(spektrem[0]) + 1)[1:]  # hann窓
     data = np.array([])
@@ -81,7 +81,7 @@ def istft(
             data = np.append(data, fixPart[overline:])
             dist = np.append(dist, window[overline:] ** 2)
     data /= dist  # 正規化
-    if limit != None:
+    if limit is not None:
         data = np.clip(data, -limit, limit)  # 雑音を抑える(除去はされない)
     tlist = np.linspace(0, len(data) / rate, len(data))  # 波形表示用
     return tlist, data
@@ -92,14 +92,13 @@ if __name__ == "__main__":
     try:
         filename = sys.argv[1]  # python3 kadai1.py ???.wav
         r, data = wavfile.read(filename)
-    except:
-        try:
-            # Song: Disfigure - Blank [NCS Release] Music provided by NoCopyrightSounds
-            filename = "blank.wav"
-            r, data = wavfile.read(filename)
-        except:
-            print("No such wavfile!")
-            sys.exit()
+    except IndexError:
+        # Song: Disfigure - Blank [NCS Release] Music provided by NoCopyrightSounds
+        filename = "blank.wav"
+        r, data = wavfile.read(filename)
+    except Exception:
+        print("No such wavfile!")
+        sys.exit()
 
     # 出力 解析結果の画像とwavファイルが保存される
     if len(data.shape) == 2:
