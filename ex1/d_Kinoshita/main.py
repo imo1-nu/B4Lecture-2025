@@ -1,6 +1,8 @@
 """
-STFTとISTFTによる音声信号の解析と再構成を行うスクリプト。
-音声ファイルを読み込み、スペクトログラムを表示し、逆変換して波形を復元します。
+Short-Time Fourier Transform (STFT) と Inverse STFT (ISTFT) のデモモジュール。
+
+このモジュールでは、オーディオファイルを読み込み、STFT を計算し、
+ISTFT によって信号を再構成し、元の波形、スペクトログラム、再構成波形を可視化します。
 """
 
 import numpy as np
@@ -17,19 +19,18 @@ hop_size = 512
 window = np.hanning(frame_size)
 
 
-# --- STFT ---
 def stft(x, frame_size, hop_size, window):
     """
-    短時間フーリエ変換（Short-Time Fourier Transform）を行う関数。
+    入力信号の短時間フーリエ変換 (STFT) を計算する。
 
     Parameters:
-        x (np.ndarray): 入力信号
-        frame_size (int): フレームサイズ
-        hop_size (int): フレーム間隔
-        window (np.ndarray): 窓関数
+        x (numpy.ndarray): 入力信号。
+        frame_size (int): フレームサイズ。
+        hop_size (int): フレーム間のホップサイズ。
+        window (numpy.ndarray): 各フレームに適用する窓関数。
 
     Returns:
-        np.ndarray: スペクトログラム（周波数×時間）
+        numpy.ndarray: 信号の STFT を表す複素数2次元配列（形状：(frame_size/2+1, n_frames)）。
     """
     frames = []
     for i in range(0, len(x) - frame_size, hop_size):
@@ -39,19 +40,18 @@ def stft(x, frame_size, hop_size, window):
     return np.array(frames).T
 
 
-# --- 逆STFT ---
 def istft(spectrogram, frame_size, hop_size, window):
     """
-    逆短時間フーリエ変換（Inverse STFT）を行う関数。
+    短時間フーリエ変換 (STFT) のスペクトログラムから元の信号を再構成する (ISTFT)。
 
     Parameters:
-        spectrogram (np.ndarray): STFT で得られたスペクトログラム
-        frame_size (int): フレームサイズ
-        hop_size (int): フレーム間隔
-        window (np.ndarray): 窓関数
+        spectrogram (numpy.ndarray): STFTスペクトログラム（複素数2次元配列）。
+        frame_size (int): フレームサイズ。
+        hop_size (int): フレーム間のホップサイズ。
+        window (numpy.ndarray): STFT時に使用した窓関数。
 
     Returns:
-        np.ndarray: 復元された波形
+        numpy.ndarray: 再構成された時系列の信号。
     """
     n_frames = spectrogram.shape[1]
     output_len = (n_frames - 1) * hop_size + frame_size
