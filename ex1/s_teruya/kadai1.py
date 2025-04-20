@@ -28,10 +28,10 @@ def stft(
                     )
                 ]
         except:
-            shortWave = data[int((i - 0.01) * trange * rate):]
+            shortWave = data[int((i - 0.01) * trange * rate) :]
         # 変換
         # window = np.sin(np.linspace(0, 2*np.pi, len(shortwave)+2)[1:-1])    # sin窓
-        window = get_window('hann', len(shortWave) + 1)[1:]                   # hann窓
+        window = get_window('hann', len(shortWave) + 1)[1:]  # hann窓
         windoWave = shortWave * window
         spek = fft(windoWave)  # FFTで変換
         # 結合
@@ -58,11 +58,11 @@ def istft(
     spektrem: np.ndarray[np.ndarray], 
     rate: float, 
     overrate: float = OVERRATE, 
-    limit=None
+    limit=None,
 ):
     """逆変換 overrateは左右のオーバーラップ率"""
     # window = np.sin(np.linspace(0, 2*np.pi, len(spektrem[0])+2)[1:-1])  # sin窓
-    window = get_window('hann', len(spektrem[0]) + 1)[1:]                 # hann窓
+    window = get_window('hann', len(spektrem[0]) + 1)[1:]  # hann窓
     data = np.array([])
     dist = np.array([])  # 正規化用
     # メイン処理
