@@ -120,7 +120,7 @@ if __name__ == "__main__":
     spectrogram = mag_to_db(magnitude)
 
     # remove after nyquist frequency
-    spectrogram = spectrogram[spectrogram.shape[0] // 2 :]
+    spectrogram = spectrogram[: spectrogram.shape[0] // 2]
 
     # process ISTFT
     istft_result = inv_stft(
@@ -148,6 +148,7 @@ if __name__ == "__main__":
         cmap="jet",
         aspect="auto",
         extent=[0, audio_time, 0, nyquist_frequency // 1000],
+        origin="lower",
     )
     ax2.set_xlim(0, audio_time)
     ax2.set_ylim(0, nyquist_frequency // 1000)
