@@ -7,9 +7,9 @@ import os
 import sys
 from typing import List
 
-import pydub
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pydub
 
 
 # 音声ファイルの読み込み
@@ -237,8 +237,8 @@ def plot_waveform(
     time = np.arange(0, len(audio)) / sample_rate
     plt.figure(figsize=(10, 4))
     plt.plot(time, audio)
-    plt.xlabel('Time (s)')
-    plt.ylabel('Amplitude')
+    plt.xlabel("Time (s)")
+    plt.ylabel("Amplitude")
     plt.title(title)
     plt.grid(True)
     plt.show()
@@ -256,8 +256,12 @@ def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
     出力：なし（スペクトログラムを表示）
     """
     spectrogram = 20 * np.log10(np.abs(spectrogram))  # dBスケールに変換
-    plt.imshow(spectrogram.T, aspect='auto', origin='lower',
-               extent=[0, times[-1], freqs[0], freqs[-1]])
+    plt.imshow(
+        spectrogram.T,
+        aspect='auto',
+        origin='lower',
+        extent=[0, times[-1], freqs[0], freqs[-1]]
+    )
     plt.colorbar(label='Magnitude')
     plt.xlabel('Time (s)')
     plt.ylabel('Frequency (Hz)')
@@ -268,7 +272,7 @@ def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
 # メイン関数
 def main():
     """メイン関数.
-    
+
     音声ファイルを読み込み，STFTを計算し，スペクトログラムを作成し，それを再構築する処理を記述する．
     入力：
       sys.argv(List)： コマンドライン引数
@@ -294,7 +298,7 @@ def main():
     times = stft_instance.times
     freqs = stft_instance.freqs
 
-    make_spectrogram(spectrogram[:, :frame_length // 2], times, freqs)
+    make_spectrogram(spectrogram[:, : frame_length // 2], times, freqs)
 
     istft_instance = Istft(spectrogram, frame_length, frame_shift, sample_rate)
     reconstructed_wave = istft_instance.reconstructed_wave
