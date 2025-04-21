@@ -52,7 +52,9 @@ def my_istft(spectrogram: np.ndarray, frame_size: int) -> np.ndarray:
     window = np.hamming(frame_size)  # ハミング窓を作成
     overlap = 0.5  # オーバラップ率
     hop_size = int(frame_size * (1 - overlap))  # ホップサイズを計算
-    signal = np.zeros(int(spectrogram.shape[1] * hop_size + frame_size))  # 出力信号を初期化
+    signal = np.zeros(
+        int(spectrogram.shape[1] * hop_size + frame_size)
+    )  # 出力信号を初期化
 
     num_frames = spectrogram.shape[1]
     signal_len = frame_size + (num_frames - 1) * hop_size
@@ -71,19 +73,31 @@ def my_istft(spectrogram: np.ndarray, frame_size: int) -> np.ndarray:
     return signal / window_sum
 
 
-def plot_spectrogram(spectrogram: np.ndarray, sr: int, hop_size: int, ax, duration: float, title: str = "Spectrogram") -> None:
+def plot_spectrogram(
+    spectrogram: np.ndarray,
+    sr: int,
+    hop_size: int,
+    ax,
+    duration: float,
+    title: str = "Spectrogram",
+) -> None:
     """スペクトログラムを描画する（時間軸を duration に揃える）"""
-    time_axis = np.linspace(0, duration, spectrogram.shape[1])  # ← duration に合わせて線形補間
+    time_axis = np.linspace(
+        0, duration, spectrogram.shape[1]
+    )  # ← duration に合わせて線形補間
     freq_axis = np.linspace(0, sr / 2, spectrogram.shape[0])
 
-    im = ax.imshow(20 * np.log10(np.abs(spectrogram) + 1e-8),
-                   aspect='auto', origin='lower',
-                   extent=[time_axis[0], time_axis[-1], freq_axis[0], freq_axis[-1]])
+    im = ax.imshow(
+        20 * np.log10(np.abs(spectrogram) + 1e-8),
+        aspect="auto",
+        origin="lower",
+        extent=[time_axis[0], time_axis[-1], freq_axis[0], freq_axis[-1]],
+    )
     ax.set_xlim([0, duration])
     ax.set_title(title)
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Frequency [Hz]")
-    plt.colorbar(im, ax=ax, format='%+2.0f dB', label='Amplitude [dB]')
+    plt.colorbar(im, ax=ax, format="%+2.0f dB", label="Amplitude [dB]")
 
 
 def main():
@@ -107,7 +121,7 @@ def main():
     fig, axs = plt.subplots(3, 1, figsize=(12, 10))
 
     # 1. 元の波形（青）
-    axs[0].plot(time, signal, color='blue')
+    axs[0].plot(time, signal, color="blue")
     axs[0].set_xlim([0, duration])
     axs[0].set_title("Original Audio Waveform")
     axs[0].set_xlabel("Time [s]")
@@ -115,9 +129,9 @@ def main():
 
     # 2. スペクトログラム（時間軸合わせ）
     plot_spectrogram(spectrogram, sr, hop_size, axs[1], duration, title="Spectrogram")
-    
+
     # 3. 復元波形（青で統一）
-    axs[2].plot(restored_time, restored_signal, color='blue')
+    axs[2].plot(restored_time, restored_signal, color="blue")
     axs[2].set_xlim([0, duration])
     axs[2].set_title("Restored Audio Waveform")
     axs[2].set_xlabel("Time [s]")
@@ -128,6 +142,7 @@ def main():
 
     # 復元音声の保存
     sf.write("restored_audio.wav", restored_signal, sr)
+
 
 if __name__ == "__main__":
     main()
