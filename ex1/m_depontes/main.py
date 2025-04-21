@@ -1,3 +1,8 @@
+"""音声データのSTFTとISTFTを実装するプログラム.
+
+音声データを読み込み，STFTを計算し，スペクトログラムを作成し，それを再構築する処理を記述する．
+"""
+
 import os
 import sys
 from typing import List
@@ -139,6 +144,7 @@ class Istft:
       frame_shift(int): フレームのシフト量
       sample_rate(int): サンプリングレート
     """
+
     def __init__(
         self,
         spectrogram: np.ndarray,
@@ -171,7 +177,6 @@ class Istft:
         出力：
           __(List[np.ndarray]): iFFTの結果のnumpy配列
         """
-        
         if len(self.spectrogram) == 0:
             return []
 
@@ -212,7 +217,6 @@ class Istft:
         # 窓関数の合計値で割ることで、歪曲された部分を補正する
 
         return reconstructed
-        
 ###
 
 
@@ -251,7 +255,6 @@ def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
       freqs(List[float]): 周波数軸要素の配列
     出力：なし（スペクトログラムを表示）
     """
-
     spectrogram = 20 * np.log10(np.abs(spectrogram))  # dBスケールに変換
     plt.imshow(spectrogram.T, aspect='auto', origin='lower',
                extent=[0, times[-1], freqs[0], freqs[-1]])
@@ -276,7 +279,6 @@ def main():
     出力：
       なし（音声データを表示）
     """
-
     args = sys.argv
     audio = read_audio(args[1])
     plot_waveform(audio, "original wave")
