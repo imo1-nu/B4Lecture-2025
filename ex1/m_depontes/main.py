@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import List
 
 import pydub
@@ -85,7 +86,7 @@ class Stft:
         for n in range(
             0, len(self.audio) - self.frame_length, self.frame_shift
         ):
-            frame = self.audio[n:n+self.frame_length]
+            frame = self.audio[n:n + self.frame_length]
             frames.append(frame)
 
         return frames
@@ -127,7 +128,8 @@ class Stft:
 
 # ISTFT実装クラス
 class Istft:
-    """短時間フーリエ逆変換（ISTFT）を実装するクラス
+    """短時間フーリエ逆変換（ISTFT）を実装するクラス.
+
     メンバ関数：
       ifft: iFFTを計算する関数
       reconstruct_wave: iFFTを適応した信号を利用して，元の音声データを再構築する関数
@@ -144,6 +146,7 @@ class Istft:
         frame_shift: int,
         sample_rate: int
     ):
+        """コンストラクタ."""
         self.spectrogram = spectrogram
         self.frame_length = frame_length
         self.frame_shift = frame_shift
@@ -159,7 +162,7 @@ class Istft:
     def ifft(
         self
     ) -> List[np.ndarray]:
-        """iFFT関数
+        """iFFT関数.
 
         FFTを適応した信号に対して，iFFTを計算する実装を行う関数．
 
@@ -177,7 +180,7 @@ class Istft:
     def reconstruct_wave(
         self
     ) -> List[np.ndarray]:
-        """波形の再構築関数
+        """波形の再構築関数.
 
         iFFTを適応した信号を利用して，元の音声データを再構築する実装を行う関数．
 
@@ -218,7 +221,7 @@ def plot_waveform(
     title: str,
     sample_rate: int = 44100
 ) -> None:
-    """波形をプロットする関数
+    """波形をプロットする関数.
 
     波形のnumpy配列を受け取り，時間軸を計算してプロットする関数．
     入力：
@@ -239,7 +242,7 @@ def plot_waveform(
 
 # スペクトログラムを作成
 def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
-    """スペクトログラムを作成する関数
+    """スペクトログラムを作成する関数.
 
     入力されたスペクトログラムの値をもとに描画を行う関数．
     入力：
@@ -261,12 +264,26 @@ def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
 
 # メイン関数
 def main():
-    audio = read_audio("case1-ref.wav")
+    """メイン関数.
+    
+    音声ファイルを読み込み，STFTを計算し，スペクトログラムを作成し，それを再構築する処理を記述する．
+    入力：
+      sys.argv(List)： コマンドライン引数
+        sys.argv[1](str): 音声ファイルのパス
+        sys.argv[2](int): サンプリングレート
+        sys.argv[3](int): フレームの長さ
+        sys.argv[4](int): フレームのシフト量
+    出力：
+      なし（音声データを表示）
+    """
+
+    args = sys.argv
+    audio = read_audio(args[1])
     plot_waveform(audio, "original wave")
 
-    sample_rate = 44100
-    frame_length = 1024
-    frame_shift = 512
+    sample_rate = args[2]
+    frame_length = args[3]
+    frame_shift = args[4]
 
     spectrogram = []
     stft_instance = Stft(audio, frame_length, frame_shift, sample_rate)
@@ -275,7 +292,7 @@ def main():
     times = stft_instance.times
     freqs = stft_instance.freqs
 
-    make_spectrogram(spectrogram[:, :frame_length//2], times, freqs)
+    make_spectrogram(spectrogram[:, :frame_length // 2], times, freqs)
 
     istft_instance = Istft(spectrogram, frame_length, frame_shift, sample_rate)
     reconstructed_wave = istft_instance.reconstructed_wave
