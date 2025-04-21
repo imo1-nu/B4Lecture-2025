@@ -41,6 +41,7 @@ class Stft:
       frame_shift(int): フレームのシフト量
       sample_rate(int): サンプリングレート
     """
+
     def __init__(
         self,
         audio: np.ndarray,
@@ -48,6 +49,7 @@ class Stft:
         frame_shift: int,
         sample_rate: int
     ):
+        """コンストラクタ."""
         self.audio = audio
         self.frame_length = frame_length
         self.frame_shift = frame_shift
@@ -61,12 +63,13 @@ class Stft:
             np.arange(len(self.spectrogram)) * self.frame_shift
         ) / self.sample_rate
         self.freqs = np.fft.fftfreq(
-            self.frame_length, d=1/self.sample_rate)[:, :self.frame_length//2]
+            self.frame_length, d=1 / self.sample_rate
+        )[:, :self.frame_length // 2]
 
     def cut_audio(
         self
     ) -> List[np.ndarray]:
-        """音声データの切り出し関数
+        """音声データの切り出し関数.
 
         STFTにおける，時間領域での音声データの切り出し（フレームの作成）を実装する関数．
 
@@ -79,7 +82,9 @@ class Stft:
           frames(List[np.ndarray]): 切り出した音声データのnumpy配列の集合
         """
         frames = []
-        for n in range(0, len(self.audio)-self.frame_length, self.frame_shift):
+        for n in range(
+            0, len(self.audio) - self.frame_length, self.frame_shift
+        ):
             frame = self.audio[n:n+self.frame_length]
             frames.append(frame)
 
@@ -89,7 +94,7 @@ class Stft:
     def window_function(
         self
     ) -> List[np.ndarray]:
-        """窓関数
+        """窓関数.
 
         STFTにおける，フレームそれぞれに窓関数を適応する実装を行う関数．
 
@@ -105,7 +110,7 @@ class Stft:
     def fft(
         self
     ) -> np.ndarray:
-        """FFT関数
+        """FFT関数.
 
         窓関数を適応したフレームに対してFFTを計算する実装を行う関数．
 
@@ -163,6 +168,7 @@ class Istft:
         出力：
           __(List[np.ndarray]): iFFTの結果のnumpy配列
         """
+        
         if len(self.spectrogram) == 0:
             return []
 
