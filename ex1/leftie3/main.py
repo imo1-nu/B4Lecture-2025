@@ -1,12 +1,27 @@
-import numpy as np
-import matplotlib.pyplot as plt
+"""A solution to ex1 implementing STFT and ISTFT on an example audio file"""
+
 import wave
+
+import matplotlib.pyplot as plt
+import numpy as np
 import scipy.io.wavfile as wavfile
 
 
-def main():
+def main() -> None:
+    """
+    The main script. Reads a .wav file and performs STFT and ISTFT on it,
+    and displays the original waveform, the STFT spectrogram as well as the resynthesized waveform
+    on the screen using matplotlib.
+
+    Params: None
+    Returns: None
+    """
+
+    # Path to .wav file
+    WAV_PATH = "./ex1/leftie3/kuma_lq.wav"
+
     # Open .wav file with builtin python interface
-    with wave.open("./ex1/leftie3/kuma_lq.wav", "rb") as file:
+    with wave.open(WAV_PATH, "rb") as file:
         # Get number of audio frames and sample rate
         nframes = file.getnframes()
         sample_rate = file.getframerate()
@@ -31,7 +46,7 @@ def main():
 
     for i in range(0, len(x) - FFT_SIZE, FFT_SIZE):
         # Raw frame FFT
-        frame = x[i:i + FFT_SIZE]
+        frame = x[i : i + FFT_SIZE]
         frame_freq_raw = np.fft.fft(frame)
         # Save raw fft output to use in inverse fft later
         spec_raw.append(frame_freq_raw)
@@ -39,7 +54,7 @@ def main():
         # Windowing needed for spectrogram
         frame_windowed = frame * window
         # Only save the first half of each FFT result
-        frame_freq = np.abs(np.fft.fft(frame_windowed))[:FFT_SIZE // 2]
+        frame_freq = np.abs(np.fft.fft(frame_windowed))[: FFT_SIZE // 2]
         spec.append(frame_freq)
 
     # Convert to numpy array and rotate so time is in x-axis
@@ -58,7 +73,7 @@ def main():
     re_t = np.linspace(0, len(re_x) / sample_rate, num=len(re_x))
 
     # Write resynthesized signal to file
-    wavfile.write("./ex1/leftie3/kuma_lq_resynthesized.wav", sample_rate, re_x)
+    wavfile.write(f"{WAV_PATH[:-4]}_resynthesized.wav", sample_rate, re_x)
 
     # -----Plotting-----
     plt.figure(1, (8, 8))
@@ -77,14 +92,25 @@ def main():
     plt.xlabel("Time (s)")
     plt.ylabel("Frequency")
 
-    xlocs = np.float32(np.linspace(0, spec.shape[1]-1, 6))
-    plt.xticks(xlocs, ["%.02f" % (i * spec.shape[1] * FFT_SIZE /
-                                  (spec.shape[1] * sample_rate)
-                                  ) for i in xlocs])
+    # X-axis ticks
+    xlocs = np.float32(np.linspace(0, spec.shape[1] - 1, 6))
+    plt.xticks(
+        xlocs,
+        [
+            "%.02f" % (i * spec.shape[1] * FFT_SIZE / (spec.shape[1] * sample_rate))
+            for i in xlocs
+        ],
+    )
 
-    ylocs = np.int32(np.round(np.linspace(0, spec.shape[0]-1, 6)))
-    plt.yticks(ylocs, ["%.0f" % ((((FFT_SIZE // 2) - i - 1) * sample_rate) /
-                                 FFT_SIZE) for i in ylocs])
+    # Y-axis ticks
+    ylocs = np.int32(np.round(np.linspace(0, spec.shape[0] - 1, 6)))
+    plt.yticks(
+        ylocs,
+        [
+            "%.0f" % ((((FFT_SIZE // 2) - i - 1) * sample_rate) / FFT_SIZE)
+            for i in ylocs
+        ],
+    )
 
     plt.imshow(spec, vmin=np.min(spec), vmax=np.max(spec), aspect="auto")
 
