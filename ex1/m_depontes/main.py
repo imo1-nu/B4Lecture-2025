@@ -8,10 +8,9 @@ import matplotlib.pyplot as plt
 
 # 音声ファイルの読み込み
 def read_audio(path: str) -> np.ndarray:
-    """ 音声ファイルを読み込む関数.
+    """音声ファイルを読み込む関数.
 
     指定されたパスから音声ファイルを読み込み，モノラルに変換し，numpy配列として返す．
-    
     入力：
       path(str): 音声ファイルのパス
     出力：
@@ -30,19 +29,18 @@ def read_audio(path: str) -> np.ndarray:
 
 # stft実装クラス
 class Stft:
-    ''' 短時間フーリエ変換（STFT）を実装するクラス
+    """短時間フーリエ変換（STFT）を実装するクラス.
 
     メンバ関数：
       cut_audio: 音声データをフレームに切り出す関数
       window_function: 窓関数を適用する関数
       fft: フレームに対してFFTを計算する関数
-          
     属性：
       audio(np.ndarray): 音声データのnumpy配列
       frame_length(int): フレームの長さ
       frame_shift(int): フレームのシフト量
       sample_rate(int): サンプリングレート
-    '''
+    """
     def __init__(
         self,
         audio: np.ndarray,
@@ -68,7 +66,7 @@ class Stft:
     def cut_audio(
         self
     ) -> List[np.ndarray]:
-        ''' 音声データの切り出し関数
+        """音声データの切り出し関数
 
         STFTにおける，時間領域での音声データの切り出し（フレームの作成）を実装する関数．
 
@@ -79,7 +77,7 @@ class Stft:
 
         出力：
           frames(List[np.ndarray]): 切り出した音声データのnumpy配列の集合
-        '''
+        """
         frames = []
         for n in range(0, len(self.audio)-self.frame_length, self.frame_shift):
             frame = self.audio[n:n+self.frame_length]
@@ -91,7 +89,7 @@ class Stft:
     def window_function(
         self
     ) -> List[np.ndarray]:
-        ''' 窓関数
+        """窓関数
 
         STFTにおける，フレームそれぞれに窓関数を適応する実装を行う関数．
 
@@ -100,14 +98,14 @@ class Stft:
 
         出力：
           __(List[np.ndarray]): 窓関数を適用した音声データのnumpy配列の集合
-        '''
+        """
         return [np.hanning(len(audio)) * audio for audio in self.frames]
 
     # FFTを計算
     def fft(
         self
     ) -> np.ndarray:
-        ''' FFT関数
+        """FFT関数
 
         窓関数を適応したフレームに対してFFTを計算する実装を行う関数．
 
@@ -115,7 +113,7 @@ class Stft:
           windowed_frames(List[np.ndarray]): 音声データのnumpy配列の集合
         出力：
           __(List[np.ndarray]): FFTの結果のnumpy配列の集合
-        '''
+        """
         if len(self.windowed_frames) == 0:
             return []
 
@@ -124,19 +122,16 @@ class Stft:
 
 # ISTFT実装クラス
 class Istft:
-    ''' 短時間フーリエ逆変換（ISTFT）を実装するクラス
-    
+    """短時間フーリエ逆変換（ISTFT）を実装するクラス
     メンバ関数：
       ifft: iFFTを計算する関数
       reconstruct_wave: iFFTを適応した信号を利用して，元の音声データを再構築する関数
-
     属性：
       spectrogram(np.ndarray): スペクトログラムのnumpy配列
       frame_length(int): フレームの長さ
       frame_shift(int): フレームのシフト量
       sample_rate(int): サンプリングレート
-      
-    '''
+    """
     def __init__(
         self,
         spectrogram: np.ndarray,
@@ -159,7 +154,7 @@ class Istft:
     def ifft(
         self
     ) -> List[np.ndarray]:
-        ''' iFFT関数
+        """iFFT関数
 
         FFTを適応した信号に対して，iFFTを計算する実装を行う関数．
 
@@ -167,7 +162,7 @@ class Istft:
           spectrogram(List[np.ndarray): スペクトログラムのnumpy配列の集合
         出力：
           __(List[np.ndarray]): iFFTの結果のnumpy配列
-        '''
+        """
         if len(self.spectrogram) == 0:
             return []
 
@@ -176,7 +171,7 @@ class Istft:
     def reconstruct_wave(
         self
     ) -> List[np.ndarray]:
-        ''' 波形の再構築関数
+        """波形の再構築関数
 
         iFFTを適応した信号を利用して，元の音声データを再構築する実装を行う関数．
 
@@ -188,7 +183,7 @@ class Istft:
 
         出力：
           reconstructed(np.array): 再構築した音声データのnumpy配列
-        '''
+        """
         num_frames = len(self.spectrogram)  # フレーム数
         reconstructed = np.zeros(self.output_len)  # 再構築する音声データの枠
         window_sum = np.zeros(self.output_len)  # 補正する窓関数の合計値
@@ -217,15 +212,13 @@ def plot_waveform(
     title: str,
     sample_rate: int = 44100
 ) -> None:
-    """ 波形をプロットする関数
+    """波形をプロットする関数
 
     波形のnumpy配列を受け取り，時間軸を計算してプロットする関数．
-
     入力：
       audio(np.ndarray): 音声データのnumpy配列
       title(str): プロットのタイトル
       sample_rate(int): サンプリングレート
-
     出力：なし（波形を表示）
     """
     time = np.arange(0, len(audio)) / sample_rate
@@ -240,17 +233,15 @@ def plot_waveform(
 
 # スペクトログラムを作成
 def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
-    ''' スペクトログラムを作成する関数
+    """スペクトログラムを作成する関数
 
     入力されたスペクトログラムの値をもとに描画を行う関数．
-
     入力：
       spectrogram(np.ndarray): スペクトログラムのnumpy配列
       times(List[float]): 時間軸要素の配列
       freqs(List[float]): 周波数軸要素の配列
-
     出力：なし（スペクトログラムを表示）
-    '''
+    """
 
     spectrogram = 20 * np.log10(np.abs(spectrogram))  # dBスケールに変換
     plt.imshow(spectrogram.T, aspect='auto', origin='lower',
