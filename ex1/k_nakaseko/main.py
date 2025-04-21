@@ -1,3 +1,8 @@
+"""
+このモジュールは、音声信号の短時間フーリエ変換（STFT）とその逆変換（iSTFT）を行います。
+また、スペクトログラムの可視化や波形の復元も含まれています。
+"""
+
 import numpy as np
 import soundfile as sf
 from matplotlib import pyplot as plt
@@ -106,6 +111,7 @@ def plot_spectrogram(
 def main():
     """
     メイン関数.
+
     音声ファイルを読み込み、STFT と iSTFT を実行し、結果を描画する.
     """
     filepath = "audio.wav"
