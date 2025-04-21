@@ -8,8 +8,10 @@ import matplotlib.pyplot as plt
 
 # 音声ファイルの読み込み
 def read_audio(path: str) -> np.ndarray:
-    """ 音声ファイルを読み込む関数
+    """ 音声ファイルを読み込む関数.
+
     指定されたパスから音声ファイルを読み込み，モノラルに変換し，numpy配列として返す．
+    
     入力：
       path(str): 音声ファイルのパス
     出力：
