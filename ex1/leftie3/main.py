@@ -16,7 +16,6 @@ def main() -> None:
     Params: None
     Returns: None
     """
-
     # Path to .wav file
     WAV_PATH = "./ex1/leftie3/kuma_lq.wav"
 
