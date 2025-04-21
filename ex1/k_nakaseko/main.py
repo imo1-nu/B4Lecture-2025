@@ -6,12 +6,13 @@ from matplotlib import pyplot as plt
 def load_audio(filepath: str) -> tuple:
     """
     音声ファイルを読み込む.
+
     Parameters:
         filepath (str): 音声ファイルのパス
+
     Returns:
         tuple: 音声データとサンプリング周波数
     """
-
     data, sr = sf.read(filepath)  # 音声データを読み込む
     return data, sr
 
@@ -19,13 +20,14 @@ def load_audio(filepath: str) -> tuple:
 def my_stft(signal: np.ndarray, frame_size: int) -> np.ndarray:
     """
     短時間フーリエ変換 (STFT).
+
     Parameters:
         signal (np.ndarray): 音声データ
         frame_size (int): 窓関数の長さ
+
     Returns:
         np.ndarray: スペクトログラム
     """
-
     spectrogram = []
     window = np.hamming(frame_size)  # 窓関数としてハミング窓を作成
     overlap = 0.5  # オーバラップ率
@@ -42,13 +44,14 @@ def my_stft(signal: np.ndarray, frame_size: int) -> np.ndarray:
 def my_istft(spectrogram: np.ndarray, frame_size: int) -> np.ndarray:
     """
     逆短時間フーリエ変換 (iSTFT).
+
     Parameters:
         spectrogram (np.ndarray): スペクトログラム
         frame_size (int): 窓関数の長さ
+
     Returns:
         np.ndarray: 復元された音声データ
     """
-
     window = np.hamming(frame_size)  # ハミング窓を作成
     overlap = 0.5  # オーバラップ率
     hop_size = int(frame_size * (1 - overlap))  # ホップサイズを計算
@@ -81,7 +84,7 @@ def plot_spectrogram(
     duration: float,
     title: str = "Spectrogram",
 ) -> None:
-    """スペクトログラムを描画する（時間軸を duration に揃える）"""
+    """スペクトログラムを描画する（時間軸を duration に揃える）."""
     time_axis = np.linspace(
         0, duration, spectrogram.shape[1]
     )  # ← duration に合わせて線形補間
@@ -101,6 +104,10 @@ def plot_spectrogram(
 
 
 def main():
+    """
+    メイン関数.
+    音声ファイルを読み込み、STFT と iSTFT を実行し、結果を描画する.
+    """
     filepath = "audio.wav"
     frame_size = 1024
 
