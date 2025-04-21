@@ -23,7 +23,9 @@ def back_padding(data: np.ndarray, length: int) -> np.ndarray:
     return np.append(data, np.zeros(length - len(data)))
 
 
-def split_data(data: np.ndarray, length: int = 1024, overlap_rate: float = 0.5) -> list[np.ndarray]:
+def split_data(
+    data: np.ndarray, length: int = 1024, overlap_rate: float = 0.5
+) -> list[np.ndarray]:
     """Split a 1D array into overlapping segments.
 
     Parameters

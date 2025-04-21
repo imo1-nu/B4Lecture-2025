@@ -8,7 +8,6 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import soundfile as sf
-
 from stft import inv_stft, stft
 
 
@@ -91,7 +90,9 @@ def parse_args() -> NameSpace:
     """
     # prepare arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("input_path", type=Path, help="Path to input audio file. (.wav)")
+    parser.add_argument(
+        "input_path", type=Path, help="Path to input audio file. (.wav)"
+    )
     parser.add_argument(
         "output_path",
         type=Path,
@@ -144,7 +145,9 @@ if __name__ == "__main__":
     spectrogram = spectrogram[: spectrogram.shape[0] // 2]
 
     # process ISTFT
-    istft_result = inv_stft(stft_result, audio_frame, filter_length, overlap_rate, window)
+    istft_result = inv_stft(
+        stft_result, audio_frame, filter_length, overlap_rate, window
+    )
 
     # prepare for graph
     x = np.linspace(0, audio_time, audio_frame)
