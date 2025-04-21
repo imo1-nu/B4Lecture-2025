@@ -1,4 +1,4 @@
-"""A solution to ex1 implementing STFT and ISTFT on an example audio file"""
+"""A solution to ex1 implementing STFT and ISTFT on an example audio file."""
 
 import wave
 
@@ -8,10 +8,10 @@ import scipy.io.wavfile as wavfile
 
 
 def main() -> None:
-    """
-    The main script. Reads a .wav file and performs STFT and ISTFT on it,
-    and displays the original waveform, the STFT spectrogram as well as the resynthesized waveform
-    on the screen using matplotlib.
+    """Process an audio file and display the results.
+
+    Reads a .wav file and performs STFT and ISTFT on it, and displays the original waveform,
+    the STFT spectrogram as well as the resynthesized waveform on the screen using matplotlib.
 
     Params: None
     Returns: None
