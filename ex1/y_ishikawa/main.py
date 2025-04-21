@@ -1,3 +1,5 @@
+"""Visualize the STFT spectrogram of an audio file and reconstruct the waveform."""
+
 import argparse
 from pathlib import Path
 from typing import Literal
@@ -33,9 +35,7 @@ def magphase(
     return magnitude, phase
 
 
-def mag_to_db(
-    magnitude: np.ndarray[float], eps: float = 1e-7
-) -> np.ndarray[float]:
+def mag_to_db(magnitude: np.ndarray[float], eps: float = 1e-7) -> np.ndarray[float]:
     """Convert magnitude to dB.
 
     Parameters
@@ -58,6 +58,22 @@ def mag_to_db(
 
 
 class NameSpace:
+    """Configuration namespace for audio processing parameters.
+
+    Parameters
+    ----------
+    input_path : Path
+        Path to the input audio file. (.wav)
+    output_path : Path
+        Path where the processed output will be saved. (.png)
+    filter_length : int
+        Length of the filter to be applied, in samples.
+    overlap_rate : float
+        Overlap rate between consecutive windows. (0 ~ 1)
+    window : {"hamming", "hann", "rect"}
+        Type of window function to apply during STFT.
+    """
+
     input_path: Path
     output_path: Path
     filter_length: int
@@ -66,11 +82,16 @@ class NameSpace:
 
 
 def parse_args() -> NameSpace:
+    """Parse command-line arguments.
+
+    Returns
+    -------
+    arguments : NameSpace
+        Parsed arguments including input/output paths, filter parameters, and window type.
+    """
     # prepare arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "input_path", type=Path, help="Path to input audio file. (.wav)"
-    )
+    parser.add_argument("input_path", type=Path, help="Path to input audio file. (.wav)")
     parser.add_argument(
         "output_path",
         type=Path,
@@ -123,9 +144,7 @@ if __name__ == "__main__":
     spectrogram = spectrogram[: spectrogram.shape[0] // 2]
 
     # process ISTFT
-    istft_result = inv_stft(
-        stft_result, audio_frame, filter_length, overlap_rate, window
-    )
+    istft_result = inv_stft(stft_result, audio_frame, filter_length, overlap_rate, window)
 
     # prepare for graph
     x = np.linspace(0, audio_time, audio_frame)

@@ -1,3 +1,5 @@
+"""Provides STFT and inverse STFT functions for 1D audio signal processing."""
+
 import numpy as np
 
 
@@ -21,9 +23,7 @@ def back_padding(data: np.ndarray, length: int) -> np.ndarray:
     return np.append(data, np.zeros(length - len(data)))
 
 
-def split_data(
-    data: np.ndarray, length: int = 1024, overlap_rate: float = 0.5
-) -> list[np.ndarray]:
+def split_data(data: np.ndarray, length: int = 1024, overlap_rate: float = 0.5) -> list[np.ndarray]:
     """Split a 1D array into overlapping segments.
 
     Parameters
@@ -111,9 +111,7 @@ def stft(
     window_func = get_window_func(window, filter_length)
 
     stft_result = []
-    for splitted_audio_data in split_data(
-        audio_data, filter_length, overlap_rate
-    ):
+    for splitted_audio_data in split_data(audio_data, filter_length, overlap_rate):
         # apply window function
         splitted_audio_data *= window_func
 
@@ -177,7 +175,7 @@ def inv_stft(
 
         # prepare to remove window function
         ifft_result *= window_func
-        norm[step * i : step * i + filter_length] += window_func ** 2
+        norm[step * i : step * i + filter_length] += window_func**2
 
         # add to result
         audio_data[step * i : step * i + filter_length] += ifft_result
