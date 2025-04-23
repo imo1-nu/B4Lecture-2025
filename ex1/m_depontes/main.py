@@ -53,7 +53,7 @@ class Stft:
         audio: np.ndarray,
         frame_length: int,
         frame_shift: int,
-        sample_rate: int
+        sample_rate: int,
     ):
         """コンストラクタ."""
         self.audio = audio
@@ -68,9 +68,9 @@ class Stft:
         self.times = (
             np.arange(len(self.spectrogram)) * self.frame_shift
         ) / self.sample_rate
-        self.freqs = np.fft.fftfreq(
-            self.frame_length, d=1 / self.sample_rate
-        )[:, :self.frame_length // 2]
+        self.freqs = np.fft.fftfreq(self.frame_length, d=1 / self.sample_rate)[
+            :, :self.frame_length // 2
+        ]
 
     def cut_audio(
         self
@@ -97,9 +97,7 @@ class Stft:
         return frames
 
     # 音声データに窓関数を適用
-    def window_function(
-        self
-    ) -> List[np.ndarray]:
+    def window_function(self) -> List[np.ndarray]:
         """窓関数.
 
         STFTにおける，フレームそれぞれに窓関数を適応する実装を行う関数．
@@ -113,9 +111,7 @@ class Stft:
         return [np.hanning(len(audio)) * audio for audio in self.frames]
 
     # FFTを計算
-    def fft(
-        self
-    ) -> np.ndarray:
+    def fft(self) -> np.ndarray:
         """FFT関数.
 
         窓関数を適応したフレームに対してFFTを計算する実装を行う関数．
@@ -150,7 +146,7 @@ class Istft:
         spectrogram: np.ndarray,
         frame_length: int,
         frame_shift: int,
-        sample_rate: int
+        sample_rate: int,
     ):
         """コンストラクタ."""
         self.spectrogram = spectrogram
@@ -159,15 +155,12 @@ class Istft:
         self.sample_rate = sample_rate
 
         self.frames = self.ifft()
-        self.output_len = (
-            (len(self.frames) - 1) * self.frame_shift + self.frame_length
-        )
+        self.output_len = (len(self.frames) - 1) * self.frame_shift
+        self.output_len += self.frame_length
         self.reconstructed_wave = self.reconstruct_wave()
 
     # iFFTを計算
-    def ifft(
-        self
-    ) -> List[np.ndarray]:
+    def ifft(self) -> List[np.ndarray]:
         """iFFT関数.
 
         FFTを適応した信号に対して，iFFTを計算する実装を行う関数．
@@ -182,9 +175,7 @@ class Istft:
 
         return np.array([np.fft.ifft(spec).real for spec in self.spectrogram])
 
-    def reconstruct_wave(
-        self
-    ) -> List[np.ndarray]:
+    def reconstruct_wave(self) -> List[np.ndarray]:
         """波形の再構築関数.
 
         iFFTを適応した信号を利用して，元の音声データを再構築する実装を行う関数．
@@ -206,10 +197,10 @@ class Istft:
         # 各フレームに対して、窓関数を適用し、再構築する
         for i in range(num_frames):
             start = i * self.frame_shift  # フレームの開始位置
-            reconstructed[start:start + self.frame_length] += (
+            reconstructed[start: start + self.frame_length] += (
                 self.frames[i] * window
             )  # 窓関数によって重みづけ
-            window_sum[start:start + self.frame_length] += window ** 2
+            window_sum[start: start + self.frame_length] += window ** 2
 
         nonzero = window_sum > 1e-10
         reconstructed[nonzero] /= window_sum[nonzero]
