@@ -1,4 +1,4 @@
-"""Apply FIR filtering to an audio file, visualize STFT spectrograms"""
+"""Apply FIR filtering to an audio file, visualize STFT spectrograms."""
 
 import argparse
 from pathlib import Path
@@ -8,7 +8,6 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import soundfile as sf
-
 from stft import inv_stft, stft
 from window import get_filter
 

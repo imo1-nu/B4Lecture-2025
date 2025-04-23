@@ -1,12 +1,11 @@
 """Provides FIR filters (low-pass, high-pass, band-pass, and band-stop filters)."""
 
 import numpy as np
-
 from stft import get_window_func
 
 
 def sinc(x: np.ndarray) -> np.ndarray:
-    """Compute the unnormalized sinc function. sinc(x) = sin(x) / x
+    """Compute the unnormalized sinc function, sinc(x) = sin(x) / x.
 
     Parameters
     ----------
