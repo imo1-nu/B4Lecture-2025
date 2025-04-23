@@ -69,12 +69,10 @@ class Stft:
             np.arange(len(self.spectrogram)) * self.frame_shift
         ) / self.sample_rate
         self.freqs = np.fft.fftfreq(self.frame_length, d=1 / self.sample_rate)[
-            :, :self.frame_length // 2
+            :, : self.frame_length // 2
         ]
 
-    def cut_audio(
-        self
-    ) -> List[np.ndarray]:
+    def cut_audio(self) -> List[np.ndarray]:
         """音声データの切り出し関数.
 
         STFTにおける，時間領域での音声データの切り出し（フレームの作成）を実装する関数．
@@ -89,7 +87,8 @@ class Stft:
         """
         frames = []
         for n in range(
-            0, len(self.audio) - self.frame_length, self.frame_shift
+            0, 
+            len(self.audio) - self.frame_length, self.frame_shift,
         ):
             frame = self.audio[n:n + self.frame_length]
             frames.append(frame)
@@ -197,10 +196,10 @@ class Istft:
         # 各フレームに対して、窓関数を適用し、再構築する
         for i in range(num_frames):
             start = i * self.frame_shift  # フレームの開始位置
-            reconstructed[start: start + self.frame_length] += (
+            reconstructed[start : start + self.frame_length] += (
                 self.frames[i] * window
             )  # 窓関数によって重みづけ
-            window_sum[start: start + self.frame_length] += window ** 2
+            window_sum[start : start + self.frame_length] += window ** 2
 
         nonzero = window_sum > 1e-10
         reconstructed[nonzero] /= window_sum[nonzero]
@@ -208,13 +207,15 @@ class Istft:
         # 窓関数の合計値で割ることで、歪曲された部分を補正する
 
         return reconstructed
+
+
 ###
 
 
 def plot_waveform(
     audio: np.ndarray,
     title: str,
-    sample_rate: int = 44100
+    sample_rate: int = 44100,
 ) -> None:
     """波形をプロットする関数.
 
@@ -249,14 +250,14 @@ def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
     spectrogram = 20 * np.log10(np.abs(spectrogram))  # dBスケールに変換
     plt.imshow(
         spectrogram.T,
-        aspect='auto',
-        origin='lower',
+        aspect="auto",
+        origin="lower",
         extent=[0, times[-1], freqs[0], freqs[-1]]
     )
-    plt.colorbar(label='Magnitude')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Frequency (Hz)')
-    plt.title('Spectrogram')
+    plt.colorbar(label="Magnitude")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Frequency (Hz)")
+    plt.title("Spectrogram")
     plt.show()
 
 
