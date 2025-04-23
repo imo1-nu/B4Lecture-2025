@@ -87,10 +87,11 @@ class Stft:
         """
         frames = []
         for n in range(
-            0, 
-            len(self.audio) - self.frame_length, self.frame_shift,
+            0,
+            len(self.audio) - self.frame_length,
+            self.frame_shift,
         ):
-            frame = self.audio[n:n + self.frame_length]
+            frame = self.audio[n : n + self.frame_length]
             frames.append(frame)
 
         return frames
@@ -199,7 +200,7 @@ class Istft:
             reconstructed[start : start + self.frame_length] += (
                 self.frames[i] * window
             )  # 窓関数によって重みづけ
-            window_sum[start : start + self.frame_length] += window ** 2
+            window_sum[start : start + self.frame_length] += window**2
 
         nonzero = window_sum > 1e-10
         reconstructed[nonzero] /= window_sum[nonzero]
@@ -252,7 +253,7 @@ def make_spectrogram(spectrogram: np.ndarray, times, freqs) -> None:
         spectrogram.T,
         aspect="auto",
         origin="lower",
-        extent=[0, times[-1], freqs[0], freqs[-1]]
+        extent=[0, times[-1], freqs[0], freqs[-1]],
     )
     plt.colorbar(label="Magnitude")
     plt.xlabel("Time (s)")
