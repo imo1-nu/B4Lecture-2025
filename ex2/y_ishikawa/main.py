@@ -140,18 +140,18 @@ def parse_args() -> NameSpace:
     parser.add_argument(
         "output_image_path",
         type=Path,
-        help="Path to output result file. (.png)",
+        help="Path to output result image file. (.png)",
     )
     parser.add_argument(
         "output_audio_path",
         type=Path,
-        help="Path to output result file. (.wav)",
+        help="Path to output result audio file. (.wav)",
     )
     parser.add_argument(
         "--filter_length",
         type=int,
         default=101,
-        help="Size of filter. Default 16",
+        help="Size of filter. Default 101",
     )
     parser.add_argument(
         "--filter_name",
