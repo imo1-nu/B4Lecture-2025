@@ -5,7 +5,9 @@ from stft import get_window_func
 
 
 def sinc(x: np.ndarray) -> np.ndarray:
-    """Compute the unnormalized sinc function, sinc(x) = sin(x) / x.
+    """Compute the unnormalized sinc function.
+
+    This function computes sinc(0) = 1, otherwise sinc(x) = sin(x) / x.
 
     Parameters
     ----------
