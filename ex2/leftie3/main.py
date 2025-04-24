@@ -1,0 +1,1 @@
+print("kadai_2")
