@@ -248,10 +248,10 @@ if __name__ == "__main__":
     filtered_data = conv(data, filter)
 
     # process STFT to data
-    origin_stft_result = stft(data, stft_length, overlap_rate, window)
+    origin_stft_result = stft(data, stft_length, overlap_rate, stft_window)
     origin_magnitude, _ = magphase(origin_stft_result)
     origin_spectrogram = mag_to_db(origin_magnitude)
-    filtered_stft_result = stft(filtered_data, stft_length, overlap_rate, window)
+    filtered_stft_result = stft(filtered_data, stft_length, overlap_rate, stft_window)
     filtered_magnitude, _ = magphase(filtered_stft_result)
     filtered_spectrogram = mag_to_db(filtered_magnitude)
 
@@ -261,7 +261,7 @@ if __name__ == "__main__":
 
     # process ISTFT
     istft_result = inv_stft(
-        filtered_stft_result, audio_frame, stft_length, overlap_rate, window
+        filtered_stft_result, audio_frame, stft_length, overlap_rate, stft_window
     )
 
     # save filtered audi0

@@ -151,7 +151,7 @@ def band_pass_filter(
     Returns
     -------
     filter : np.ndarray
-        The designed bad-pass FIR filter as a 1D array.
+        The designed band-pass FIR filter as a 1D array.
     """
     window_func = get_window_func(window, length)
 
@@ -187,7 +187,7 @@ def band_stop_filter(
     Returns
     -------
     filter : np.ndarray
-        The designed bad-stop FIR filter as a 1D array.
+        The designed band-stop FIR filter as a 1D array.
     """
     window_func = get_window_func(window, length)
 
