@@ -105,7 +105,9 @@ def plot_results(
 
     # 振幅特性のプロット
     ax0 = fig.add_subplot(gs[0, 0])
-    ax0.plot(freqs[: FFT_SIZE // 2], amp_dB[: FFT_SIZE // 2])  # 周波数軸は[0, f_max]にする
+    ax0.plot(
+        freqs[: FFT_SIZE // 2], amp_dB[: FFT_SIZE // 2]
+    )  # 周波数軸は[0, f_max]にする
     ax0.set_xlim(0, sr / 2)
     ax0.set_title("Amplitude Characteristic")
     ax0.set_xlabel("Frequency [Hz]", fontsize=12)
@@ -172,7 +174,9 @@ def parse_arguments() -> argparse.Namespace:
 
     フィルターの種類と遮断周波数を指定します.
     """
-    parser = argparse.ArgumentParser(description="フィルターの種類と遮断周波数を指定します。")
+    parser = argparse.ArgumentParser(
+        description="フィルターの種類と遮断周波数を指定します。"
+    )
 
     # フィルターの種類を指定
     parser.add_argument(
@@ -214,7 +218,9 @@ def main():
     H = np.fft.fft(h)  # フィルタの周波数応答
     filtered_data = convolve(data, h[: FILTER_ORDER + 1])  # フィルタリング
     spec_origin = sp.spectrogram_dB(data, FFT_SIZE)  # 元のスペクトログラム
-    filtered_spec = sp.spectrogram_dB(filtered_data, FFT_SIZE)  # フィルタ後のスペクトログラム
+    filtered_spec = sp.spectrogram_dB(
+        filtered_data, FFT_SIZE
+    )  # フィルタ後のスペクトログラム
     plot_results(
         H, freqs, spec_origin, filtered_spec, sr, args.filter_type
     )  # フィルタの特性とスペクトログラムをプロット
