@@ -35,7 +35,7 @@ def stft(x, frame_size, hop_size, window):
     """
     frames = []
     for i in range(0, len(x) - frame_size, hop_size):
-        frame = x[i: i + frame_size] * window
+        frame = x[i : i + frame_size] * window
         spectrum = np.fft.rfft(frame)
         frames.append(spectrum)
     return np.array(frames).T
@@ -62,8 +62,8 @@ def istft(spectrogram, frame_size, hop_size, window):
     for i in range(n_frames):
         frame = np.fft.irfft(spectrogram[:, i])
         start = i * hop_size
-        output[start: start + frame_size] += frame * window
-        window_sum[start: start + frame_size] += window ** 2
+        output[start : start + frame_size] += frame * window
+        window_sum[start : start + frame_size] += window ** 2
 
     nonzero = window_sum > 1e-6
     output[nonzero] /= window_sum[nonzero]
