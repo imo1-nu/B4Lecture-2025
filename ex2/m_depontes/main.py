@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pydub
 
+
 # 音声ファイルの読み込み
 def read_audio(path: str) -> np.ndarray:
     """音声ファイルを読み込む関数.
@@ -111,7 +112,7 @@ class FIR:
         """
         filter = np.zeros(2 * self.M + 1)  # フィルタ係数の初期化
         omega = 2 * self.fc / self.fs # デジタル周波数
-        n = np.arange(0,2*self.M+1) # 因果的フィルタ変換
+        n = np.arange(0,2 * self.M + 1) # 因果的フィルタ変換
         filter = np.sinc(n - self.M) - omega * np.sinc(omega * (n - self.M))  # HPF
 
         return filter
@@ -155,7 +156,7 @@ class FIR:
             self.fc, self.fc2 = self.fc2, self.fc
 
         filter = np.zeros(2 * self.M + 1)
-        n = np.arange(-self.M,self.M+1)
+        n = np.arange(-self.M, self.M + 1)
         filter = np.sinc(n) - self.band_pass_filter()
 
         return filter
@@ -174,12 +175,14 @@ class FIR:
         出力：
             y(np.ndarray): 出力信号, shape = (data)
         """
+
         window = np.hamming(len(filter))  
         y = self.convolution_calculate(audio, filter * window)
         return y
     
 
-def plot_filter_response(h: np.ndarray, fs:int ,title: str) -> None:
+
+def plot_filter_response(h: np.ndarray, fs: int ,title: str) -> None:
     """フィルタの振幅特性と位相特性をプロットする関数.
 
     入力：
@@ -222,6 +225,7 @@ def make_spectrogram(audio: np.ndarray, Fs: int, title: str) -> None:
         None(スペクトログラムを出力)
     """
     import scipy.signal as signal
+
     f, t, Sxx = signal.spectrogram(audio, fs=Fs, nperseg=512)
 
     plt.figure()
@@ -251,38 +255,38 @@ def parse_arguments():
         type=str,
         required=True,
         choices=["low", "high", "bandpass", "bandstop"],
-        help="使用するフィルタの種類を指定 (low, high, bandpass, bandstop)"
+        help="使用するフィルタの種類を指定 (low, high, bandpass, bandstop)",
     )
     parser.add_argument(
         "--fc",
         type=float,
         nargs="*",
         required=True,
-        help="カットオフ周波数 (low/highの場合は1つ, bandpass/bandstopの場合は2つ指定)"
+        help="カットオフ周波数 (low/highの場合は1つ, bandpass/bandstopの場合は2つ指定)",
     )
     parser.add_argument(
         "--M",
         type=int,
         default=64,
-        help="フィルタの次数 (デフォルト: 64)"
+        help="フィルタの次数 (デフォルト: 64)",
     )
     parser.add_argument(
         "--fs",
         type=int,
         default=44100,
-        help="サンプリング周波数 (デフォルト: 44100 Hz)"
+        help="サンプリング周波数 (デフォルト: 44100 Hz)",
     )
     parser.add_argument(
         "--input",
         type=str,
         required=True,
-        help="入力音声ファイルのパス"
+        help="入力音声ファイルのパス",
     )
     parser.add_argument(
         "--output",
         type=str,
         default="filtered_audio.wav",
-        help="出力音声ファイルのパス"
+        help="出力音声ファイルのパス",
     )
 
     return parser.parse_args()
