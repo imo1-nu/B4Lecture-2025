@@ -90,7 +90,7 @@ class FIR:
         出力：
             filter(np.ndarray): フィルタ係数, shape = (filterValue)
         """
-        if fc == None:
+        if fc is None:
             fc = self.fc
 
         filter = np.zeros(2 * self.M + 1)  # フィルタ係数の初期化
@@ -180,7 +180,6 @@ class FIR:
         出力：
             y(np.ndarray): 出力信号, shape = (data)
         """
-
         window = np.hamming(len(filter))
         y = self.convolution_calculate(audio, filter * window)
         return y
@@ -218,7 +217,7 @@ def plot_filter_response(h: np.ndarray, fs: int, title: str) -> None:
 
 
 def make_spectrogram(audio: np.ndarray, Fs: int, title: str) -> None:
-    """スペクトログラムを表示する関数．
+    """スペクトログラムを表示する関数.
 
     入力：
         audio(np.ndarray): 音声データ, shape = (data)
