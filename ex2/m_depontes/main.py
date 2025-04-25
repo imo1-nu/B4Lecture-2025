@@ -1,8 +1,9 @@
-""" デジタルフィルタ実装プログラム.
+"""デジタルフィルタ実装プログラム.
 
 デジタルフィルタの設計を行い，フィルタリングを行うプログラムを記述する．
 最初にFIRフィルタのHPF，LPF，BPF，BSPを構成し，そののちにIIRフィルタの作成を行う．
 """
+
 import os
 
 import matplotlib.pyplot as plt
@@ -30,6 +31,7 @@ def read_audio(path: str) -> np.ndarray:
 
     return audio_data
 
+
 class FIR:
     """FIRフィルタの設計とフィルタリングを行うクラス.
 
@@ -39,9 +41,12 @@ class FIR:
         filtering: フィルタリングを行う関数
 
     属性：
-        
+        M(int): フィルタの次数
+        fc(int): カットオフ周波数．複数の場合は下限を意味する．
+        fs(int): サンプリング周波数
+        fc2(int): 上限カットオフ周波数
     """
-    
+
     def __init__(self, M, fc, fs, fc2 = None):
         """初期化関数.
 
@@ -70,7 +75,7 @@ class FIR:
             y[i] = 0
             for j in range(len(h)):
                 y[i] += x[i + j] * h[j]
-        return np.array(y)    
+        return np.array(y)
 
     def low_path_filter(self,fc = None):
         """LPFを設計する関数.
@@ -93,7 +98,7 @@ class FIR:
         omega = 2 * fc / self.fs
         # 補足：np.sinc(x) = sin(np.pi * x) / (np.pi * x) のため，omegaのpiは省略される
 
-        filter = omega * np.sinc(omega * np.arange(-self.M,self.M+1))  # LPF
+        filter = omega * np.sinc(omega * np.arange(-self.M, self.M + 1))  # LPF
 
         return filter
 
@@ -111,12 +116,12 @@ class FIR:
             filter(np.ndarray): フィルタ係数, shape = (filterValue)
         """
         filter = np.zeros(2 * self.M + 1)  # フィルタ係数の初期化
-        omega = 2 * self.fc / self.fs # デジタル周波数
-        n = np.arange(0,2 * self.M + 1) # 因果的フィルタ変換
+        omega = 2 * self.fc / self.fs  # デジタル周波数
+        n = np.arange(0, 2 * self.M + 1)  # 因果的フィルタ変換
         filter = np.sinc(n - self.M) - omega * np.sinc(omega * (n - self.M))  # HPF
 
         return filter
-    
+
     def band_pass_filter(self):
         """BPFを設計する関数.
 
@@ -133,17 +138,17 @@ class FIR:
         """
         if self.fc > self.fc2:
             self.fc, self.fc2 = self.fc2, self.fc
-        
+
         filter = np.zeros(2 * self.M + 1)
         filter = self.low_path_filter(self.fc2) - self.low_path_filter(self.fc)
 
-        return filter 
+        return filter
 
     def band_stop_filter(self):
         """BSFを設計する関数.
 
         定義より，全通過フィルタとバンドパスフィルタの組み合わせとして表現できる．
-        
+
         入力：
             M(int): フィルタの次数
             fc(int): 下側のカットオフ周波数
@@ -176,10 +181,9 @@ class FIR:
             y(np.ndarray): 出力信号, shape = (data)
         """
 
-        window = np.hamming(len(filter))  
+        window = np.hamming(len(filter))
         y = self.convolution_calculate(audio, filter * window)
         return y
-    
 
 
 def plot_filter_response(h: np.ndarray, fs: int ,title: str) -> None:
