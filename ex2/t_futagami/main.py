@@ -70,7 +70,7 @@ def convolve(input: np.ndarray, h: np.ndarray) -> np.ndarray:
         for j in range(FILTER_ORDER + 1):
             output[i] += h[j] * input[i - j]  # フィルタリング
 
-    output = output[FILTER_ORDER:]  # ゼロパディングを除去
+    output = output[FILTER_ORDER * 3 // 2 :]  # ゼロパディングを除去
     output = output[:N]  # 出力信号のサイズを元に戻す
     return output
 
@@ -104,9 +104,7 @@ def plot_results(
 
     # 振幅特性のプロット
     ax0 = fig.add_subplot(gs[0, 0])
-    ax0.plot(
-        freqs[: FFT_SIZE // 2], amp_dB[: FFT_SIZE // 2]
-    )  # 周波数軸は[0, f_max]にする
+    ax0.plot(freqs[: FFT_SIZE // 2], amp_dB[: FFT_SIZE // 2])  # 周波数軸は[0, f_max]にする
     ax0.set_xlim(0, sr / 2)
     ax0.set_title("Amplitude Characteristic")
     ax0.set_xlabel("Frequency [Hz]", fontsize=12)
@@ -173,9 +171,7 @@ def parse_arguments() -> argparse.Namespace:
 
     フィルターの種類と遮断周波数を指定します.
     """
-    parser = argparse.ArgumentParser(
-        description="フィルターの種類と遮断周波数を指定します。"
-    )
+    parser = argparse.ArgumentParser(description="フィルターの種類と遮断周波数を指定します。")
 
     # フィルターの種類を指定
     parser.add_argument(
@@ -216,9 +212,7 @@ def main():
     h = impulse_response(args.filter_type, args.cutoff, freqs)
     filtered_data = convolve(data, h[: FILTER_ORDER + 1])  # フィルタリング
     spec_origin = sp.spectrogram_dB(data, FFT_SIZE)  # 元のスペクトログラム
-    filtered_spec = sp.spectrogram_dB(
-        filtered_data, FFT_SIZE
-    )  # フィルタ後のスペクトログラム
+    filtered_spec = sp.spectrogram_dB(filtered_data, FFT_SIZE)  # フィルタ後のスペクトログラム
     plot_results(
         h, freqs, spec_origin, filtered_spec, sr
     )  # フィルタの特性とスペクトログラムをプロット
