@@ -76,23 +76,24 @@ def convolve(input: np.ndarray, h: np.ndarray) -> np.ndarray:
 
 
 def plot_results(
-    h: np.ndarray,
+    Filter: np.ndarray,
     freqs: np.ndarray,
     spec_origin: np.ndarray,
     filtered_spec: np.ndarray,
     sr: int,
+    filter_type: str,
 ):
     """
     フィルタの振幅特性、位相特性、フィルタ前後のスペクトログラムを1枚の画像にプロット.
 
     Parameters:
-        h (np.ndarray): フィルタのインパルス応答
+        Filter (np.ndarray): フィルタの周波数応答
         freqs (np.ndarray): 周波数軸
         spec_origin (np.ndarray): フィルタ前のスペクトログラム
         filtered_spec (np.ndarray): フィルタ後のスペクトログラム
         sr (int): サンプリング周波数
+        filter_type (str): フィルタの種類
     """
-    Filter = np.fft.fft(h.real)  # 時間領域から周波数領域に変換
     amp_dB = 20 * np.log10(np.abs(Filter))  # 振幅特性をdBに変換
     deg = np.unwrap(np.angle(Filter))  # 位相特性
 
@@ -162,7 +163,7 @@ def plot_results(
     fig.set_constrained_layout(True)
     plt.show()
     # figsディレクトリの中に画像を保存
-    fig.savefig("figs/result.png", dpi=300)
+    fig.savefig("figs/" + filter_type + ".png", dpi=300)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -206,16 +207,20 @@ def main():
     音声データを読み込み、フィルタを適用し、結果をプロットします.
     """
     args = parse_arguments()  # 引数を解析
-    data, sr = sf.read("audio.wav")  # 音声データを読み込み
+    data, sr = sf.read("audio/audio.wav")  # 音声データを読み込み
     freqs = np.fft.fftfreq(FFT_SIZE, d=1 / sr)  # 周波数軸 [0, f_max] → [-f_max, 0]
 
     h = impulse_response(args.filter_type, args.cutoff, freqs)
+    H = np.fft.fft(h)  # フィルタの周波数応答
     filtered_data = convolve(data, h[: FILTER_ORDER + 1])  # フィルタリング
     spec_origin = sp.spectrogram_dB(data, FFT_SIZE)  # 元のスペクトログラム
     filtered_spec = sp.spectrogram_dB(filtered_data, FFT_SIZE)  # フィルタ後のスペクトログラム
     plot_results(
-        h, freqs, spec_origin, filtered_spec, sr
+        H, freqs, spec_origin, filtered_spec, sr, args.filter_type
     )  # フィルタの特性とスペクトログラムをプロット
+    sf.write(
+        "audio/audio" + "_" + args.filter_type + ".wav", filtered_data, sr
+    )  # フィルタ後の音声データを保存
 
 
 if __name__ == "__main__":
