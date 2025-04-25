@@ -63,7 +63,7 @@ def istft(spectrogram, frame_size, hop_size, window):
         frame = np.fft.irfft(spectrogram[:, i])
         start = i * hop_size
         output[start : start + frame_size] += frame * window
-        window_sum[start : start + frame_size] += window ** 2
+        window_sum[start : start + frame_size] += window**2
 
     nonzero = window_sum > 1e-6
     output[nonzero] /= window_sum[nonzero]
