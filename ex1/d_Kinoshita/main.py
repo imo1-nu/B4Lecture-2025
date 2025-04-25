@@ -1,8 +1,9 @@
 """
-Short-Time Fourier Transform (STFT) と Inverse STFT (ISTFT) のデモモジュール。
+STFT and ISTFT processing demo.
 
-このモジュールでは、オーディオファイルを読み込み、STFT を計算し、
-ISTFT によって信号を再構成し、元の波形、スペクトログラム、再構成波形を可視化します。
+This module reads an audio file, computes its STFT,
+reconstructs it using ISTFT,and visualizes the original waveform,
+the spectrogram, and the reconstructed waveform.
 """
 
 import numpy as np
@@ -21,20 +22,20 @@ window = np.hanning(frame_size)
 
 def stft(x, frame_size, hop_size, window):
     """
-    入力信号の短時間フーリエ変換 (STFT) を計算する関数です。
+    Compute the Short-Time Fourier Transform (STFT).
 
     Parameters:
-        x (numpy.ndarray): 入力信号。
-        frame_size (int): フレームサイズ。
-        hop_size (int): フレーム間のホップサイズ。
-        window (numpy.ndarray): 各フレームに適用する窓関数。
+        x (np.ndarray): Input signal.
+        frame_size (int): Size of each frame.
+        hop_size (int): Step size between frames.
+        window (np.ndarray): Window function to apply.
 
     Returns:
-        numpy.ndarray: 信号の STFT を表す複素数2次元配列（形状：(frame_size/2+1, n_frames)）。
+        np.ndarray: Complex STFT (shape: [frame_size // 2 + 1, num_frames]).
     """
     frames = []
     for i in range(0, len(x) - frame_size, hop_size):
-        frame = x[i : i + frame_size] * window
+        frame = x[i:i + frame_size] * window
         spectrum = np.fft.rfft(frame)
         frames.append(spectrum)
     return np.array(frames).T
@@ -42,16 +43,16 @@ def stft(x, frame_size, hop_size, window):
 
 def istft(spectrogram, frame_size, hop_size, window):
     """
-    スペクトログラムから元の信号を再構成する逆短時間フーリエ変換 (ISTFT) の関数です。
+    Perform inverse STFT to reconstruct the time-domain signal.
 
     Parameters:
-        spectrogram (numpy.ndarray): STFTスペクトログラム（複素数2次元配列）。
-        frame_size (int): フレームサイズ。
-        hop_size (int): フレーム間のホップサイズ。
-        window (numpy.ndarray): STFT時に使用した窓関数。
+        spectrogram (np.ndarray): STFT (complex 2D array).
+        frame_size (int): Frame size used in STFT.
+        hop_size (int): Hop size used in STFT.
+        window (np.ndarray): Window function used in STFT.
 
     Returns:
-        numpy.ndarray: 再構成された時系列の信号。
+        np.ndarray: Reconstructed time-domain signal.
     """
     n_frames = spectrogram.shape[1]
     output_len = (n_frames - 1) * hop_size + frame_size
@@ -61,8 +62,8 @@ def istft(spectrogram, frame_size, hop_size, window):
     for i in range(n_frames):
         frame = np.fft.irfft(spectrogram[:, i])
         start = i * hop_size
-        output[start : start + frame_size] += frame * window
-        window_sum[start : start + frame_size] += window**2
+        output[start:start + frame_size] += frame * window
+        window_sum[start:start + frame_size] += window ** 2
 
     nonzero = window_sum > 1e-6
     output[nonzero] /= window_sum[nonzero]
