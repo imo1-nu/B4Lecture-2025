@@ -41,7 +41,7 @@ class FIR:
         
     """
     
-    def __init__(self, M, fc, fc2 = None, fs):
+    def __init__(self, M, fc, fs, fc2 = None):
             """ 初期化関数.
 
             入力：
@@ -53,8 +53,6 @@ class FIR:
             self.fc = fc
             self.fc2 = fc2
             self.fs = fs
-            self.omega = 2 * fc / fs  # デジタル周波数 / np.pi
-            # 補足：np.sinc(x) = sin(np.pi * x) / (np.pi * x) のため，omegaのpiは省略される
 
     def convolution_calculate(self, x, h):
             """ 畳み込み計算を行う関数.
@@ -73,8 +71,10 @@ class FIR:
                     y[i] += x[i + j] * h[j]
             return np.array(y)    
 
-    def low_path_filter(self):
+    def low_path_filter(self,fc = None):
             """ LPFを設計する関数.
+
+            BPFでの再利用をするため，fcは外部からも指定可能とする．
 
             入力：
                 M(int): フィルタの次数
@@ -84,9 +84,15 @@ class FIR:
             出力：
                 filter(np.ndarray): フィルタ係数, shape = (filterValue)
             """
+            if fc == None:
+                fc = self.fc
+
             filter = np.zeros(2 * self.M + 1)  # フィルタ係数の初期化
 
-            filter = self.omega * np.sinc(self.omega * np.arange(-self.M,self.M+1))  # LPF
+            omega = 2 * fc / self.fs
+            # 補足：np.sinc(x) = sin(np.pi * x) / (np.pi * x) のため，omegaのpiは省略される
+
+            filter = omega * np.sinc(omega * np.arange(-self.M,self.M+1))  # LPF
 
             return filter
 
@@ -104,8 +110,9 @@ class FIR:
                 filter(np.ndarray): フィルタ係数, shape = (filterValue)
             """
             filter = np.zeros(2 * self.M + 1)  # フィルタ係数の初期化
-            n = np.arange(0,2*self.M+1)
-            filter = np.sinc(n - self.M) - self.omega * np.sinc(self.omega * (n - self.M))  # HPF
+            omega = 2 * self.fc / self.fs # デジタル周波数
+            n = np.arange(0,2*self.M+1) # 因果的フィルタ変換
+            filter = np.sinc(n - self.M) - omega * np.sinc(omega * (n - self.M))  # HPF
 
             return filter
     
@@ -127,7 +134,7 @@ class FIR:
                 self.fc, self.fc2 = self.fc2, self.fc
             
             filter = np.zeros(2 * self.M + 1)
-            filter = self.low_path_filter(self.M, self.fc2, self.fs) - self.low_path_filter(self.M, self.fc, self.fs)
+            filter = self.low_path_filter(self.fc2) - self.low_path_filter(self.fc)
 
             return filter 
 
@@ -149,7 +156,7 @@ class FIR:
 
             filter = np.zeros(2 * self.M + 1)
             n = np.arange(-self.M,self.M+1)
-            filter = np.sinc(n) - self.band_pass_filter(self.M, self.fc, self.fc2, self.fs)
+            filter = np.sinc(n) - self.band_pass_filter()
 
             return filter
 
@@ -262,20 +269,20 @@ if __name__ == "__main__":
 
     # フィルタの種類に応じて処理を分岐
     if args.filter == "low":
-        filter_coeff = fir.low_path_filter(M=args.M, fc=args.fc[0], fs=args.fs)
+        filter_coeff = fir.low_path_filter()
         title = "Low-Pass Filter"
     elif args.filter == "high":
-        filter_coeff = fir.high_pass_filter(M=args.M, fc=args.fc[0], fs=args.fs)
+        filter_coeff = fir.high_pass_filter()
         title = "High-Pass Filter"
     elif args.filter == "bandpass":
         if len(args.fc) != 2:
             raise ValueError("bandpassフィルタには2つのカットオフ周波数を指定してください")
-        filter_coeff = fir.band_pass_filter(M=args.M, fc=args.fc[0], fc2=args.fc[1], fs=args.fs)
+        filter_coeff = fir.band_pass_filter()
         title = "Band-Pass Filter"
     elif args.filter == "bandstop":
         if len(args.fc) != 2:
             raise ValueError("bandstopフィルタには2つのカットオフ周波数を指定してください")
-        filter_coeff = fir.band_stop_filter(M=args.M, fc=args.fc[0], fc2=args.fc[1], fs=args.fs)
+        filter_coeff = fir.band_stop_filter()
         title = "Band-Stop Filter"
 
     # フィルタリングを実行
