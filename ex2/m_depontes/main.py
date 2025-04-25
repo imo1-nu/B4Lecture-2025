@@ -47,7 +47,7 @@ class FIR:
         fc2(int): 上限カットオフ周波数
     """
 
-    def __init__(self, M, fc, fs, fc2 = None):
+    def __init__(self, M, fc, fs, fc2=None):
         """初期化関数.
 
         入力：
@@ -77,7 +77,7 @@ class FIR:
                 y[i] += x[i + j] * h[j]
         return np.array(y)
 
-    def low_path_filter(self,fc = None):
+    def low_path_filter(self, fc=None):
         """LPFを設計する関数.
 
         BPFでの再利用をするため，fcは外部からも指定可能とする．
@@ -186,7 +186,7 @@ class FIR:
         return y
 
 
-def plot_filter_response(h: np.ndarray, fs: int ,title: str) -> None:
+def plot_filter_response(h: np.ndarray, fs: int, title: str) -> None:
     """フィルタの振幅特性と位相特性をプロットする関数.
 
     入力：
