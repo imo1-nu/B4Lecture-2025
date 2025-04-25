@@ -1,6 +1,7 @@
-""" FIR実装プログラム.
+""" デジタルフィルタ実装プログラム.
 
-FIRフィルタの設計を行い，フィルタリングを行うプログラムを記述する．
+デジタルフィルタの設計を行い，フィルタリングを行うプログラムを記述する．
+最初にFIRフィルタのHPF，LPF，BPF，BSPを構成し，そののちにIIRフィルタの作成を行う．
 """
 import os
 
@@ -40,26 +41,29 @@ class FIR:
         
     """
     
-    def __init__(self, M, fc, fs):
+    def __init__(self, M, fc, fc2 = None, fs):
             """ 初期化関数.
 
-            引数：
+            入力：
                 M: フィルタの次数
                 fc: カットオフ周波数
                 fs: サンプリング周波数
             """
             self.M = M
             self.fc = fc
+            self.fc2 = fc2
             self.fs = fs
+            self.omega = 2 * fc / fs  # デジタル周波数 / np.pi
+            # 補足：np.sinc(x) = sin(np.pi * x) / (np.pi * x) のため，omegaのpiは省略される
 
     def convolution_calculate(self, x, h):
             """ 畳み込み計算を行う関数.
 
-            引数：
+            入力：
                 x: 入力信号
                 h: フィルタ係数
 
-            戻り値：
+            出力：
                 y: 出力信号
             """
             y = [0 for _ in range(len(x) - len(h) + 1)]
@@ -69,49 +73,83 @@ class FIR:
                     y[i] += x[i + j] * h[j]
             return np.array(y)    
 
-    def low_path_filter(self, M, fc, fs):
-            """ デジタルフィルタを設計する関数.
-            
-            入力：
-                M: フィルタの次数
-                fc: カットオフ周波数
-                fs: サンプリング周波数
-            出力：
-                h: フィルタ係数
-            """
-            filter = np.zeros(2 * M + 1)  # フィルタ係数の初期化
+    def low_path_filter(self):
+            """ LPFを設計する関数.
 
-            filter = 2 * (fc / fs) * np.sinc(2 * fc / fs * np.arange(-M,M+1))  # LPF
+            入力：
+                M(int): フィルタの次数
+                fc(int): 下側のカットオフ周波数
+                fs(int): サンプリング周波数
+
+            出力：
+                filter(np.ndarray): フィルタ係数, shape = (filterValue)
+            """
+            filter = np.zeros(2 * self.M + 1)  # フィルタ係数の初期化
+
+            filter = self.omega * np.sinc(self.omega * np.arange(-self.M,self.M+1))  # LPF
 
             return filter
 
-    def high_pass_filter(self, M, fc, fs):
-            """ .
+    def high_pass_filter(self):
+            """ HPFを設計する関数.
+
+            HPFは非因果的であるため，因果的にするためのシフト処理を行う．
+
+            入力：
+                M(int): フィルタの次数
+                fc(int): 下側のカットオフ周波数
+                fs(int): サンプリング周波数
+
+            出力：
+                filter(np.ndarray): フィルタ係数, shape = (filterValue)
             """
-            filter = np.zeros(2 * M + 1)  # フィルタ係数の初期化
-            filter = np.sinc(np.arange(0,2*M+1)-M) - 2 * fc / fs * np.sinc(2 * fc / fs * (np.arange(0, 2*M+1)-M))  # HPF
+            filter = np.zeros(2 * self.M + 1)  # フィルタ係数の初期化
+            n = np.arange(0,2*self.M+1)
+            filter = np.sinc(n - self.M) - self.omega * np.sinc(self.omega * (n - self.M))  # HPF
 
             return filter
     
-    def band_pass_filter(self, M, fc1, fc2, fs):
-            """ .
+    def band_pass_filter(self):
+            """ BPFを設計する関数.
+
+            定義より，2つのカットオフ周波数における低域通過フィルタの組み合わせとして表現できる．
+
+            入力：
+                M(int): フィルタの次数
+                fc(int): 下側のカットオフ周波数
+                fc2(int): 上側のカットオフ周波数
+                fs(int): サンプリング周波数
+
+            出力：
+                filter(np.ndarray): フィルタ係数, shape = (filterValue)
             """
-            if fc1 > fc2:
-                fc1, fc2 = fc2, fc1
+            if self.fc > self.fc2:
+                self.fc, self.fc2 = self.fc2, self.fc
             
-            filter = np.zeros(2 * M + 1)
-            filter = self.low_path_filter(M, fc2, fs) - self.low_path_filter(M, fc1, fs)
+            filter = np.zeros(2 * self.M + 1)
+            filter = self.low_path_filter(self.M, self.fc2, self.fs) - self.low_path_filter(self.M, self.fc, self.fs)
 
             return filter 
 
-    def band_elimination_filter(self, M, fc1, fc2, fs):
-            """ .
-            """
-            if fc1 > fc2:
-                fc1, fc2 = fc2, fc1
+    def band_stop_filter(self):
+            """ BSFを設計する関数.
 
-            filter = np.zeros(2 * M + 1)
-            filter = np.sinc(np.arange(-M,M+1)) - self.band_pass_filter(M, fc1,fc2, fs)
+            定義より，全通過フィルタとバンドパスフィルタの組み合わせとして表現できる．
+            
+            入力：
+                M(int): フィルタの次数
+                fc(int): 下側のカットオフ周波数
+                fc2(int): 上側のカットオフ周波数
+                fs(int): サンプリング周波数
+            出力：
+                filter(np.ndarray): フィルタ係数, shape = (filterValue)
+            """
+            if self.fc > self.fc2:
+                self.fc, self.fc2 = self.fc2, self.fc
+
+            filter = np.zeros(2 * self.M + 1)
+            n = np.arange(-self.M,self.M+1)
+            filter = np.sinc(n) - self.band_pass_filter(self.M, self.fc, self.fc2, self.fs)
 
             return filter
 
@@ -122,23 +160,24 @@ class FIR:
     ) -> np.ndarray:
         """ フィルタリングを行う関数.
 
-        引数：
-            audio: 入力信号
-            M: フィルタの次数
+        入力：
+            audio(np.ndarray): 入力信号, shape = (data)
+            filter(np.ndarray): フィルタ係数, shape = (filterValue)
 
-        戻り値：
-            y: 出力信号
+        出力：
+            y(np.ndarray): 出力信号, shape = (data)
         """
         window = np.hamming(len(filter))  
         y = self.convolution_calculate(audio, filter*window)
         return y
     
-def plot_filter_response(h, fs,title: str):
-    """フィルタの振幅特性と位相特性をプロットする関数.
+def plot_filter_response(h: np.ndarray, fs:int ,title: str) -> None:
+    """ フィルタの振幅特性と位相特性をプロットする関数.
 
-    引数：
-        h: フィルタ係数
-        fs: サンプリング周波数
+    入力：
+        h(np.ndarray): フィルタ係数, shape = (filterValue)
+        fs(int): サンプリング周波数
+        title(str): グラフのタイトル
     """
     N = 512  # 長めのFFTサイズでゼロパディング
     H = np.fft.rfft(h, n=N)
@@ -146,7 +185,7 @@ def plot_filter_response(h, fs,title: str):
 
     # 振幅応答
     plt.figure()
-    plt.plot(w, 20 * np.log10(np.abs(H) + 1e-10))  # log(0)対策
+    plt.plot(w, 20 * np.log10(np.abs(H) + 1e-10))  # log(0)対策, 表記はデシベル
     plt.title(f"Amplitude Response of {title}")
     plt.xlabel("Frequency [Hz]")
     plt.ylabel("Amplitude [dB]")
@@ -162,7 +201,17 @@ def plot_filter_response(h, fs,title: str):
 
     plt.show()
 
-def make_spectrogram(audio: np.ndarray,Fs: int = 44100) -> None:
+def make_spectrogram(audio: np.ndarray, Fs: int, title: str) -> None:
+    """ スペクトログラムを表示する関数．
+
+    入力：
+        audio(np.ndarray): 音声データ, shape = (data)
+        Fs(int): サンプリング周波数
+        title(str): スペクトログラムのタイトル
+
+    出力：
+        None(スペクトログラムを出力)
+    """
     import scipy.signal as signal
     f,t,Sxx = signal.spectrogram(audio, fs=Fs, nperseg=512)
 
@@ -170,12 +219,20 @@ def make_spectrogram(audio: np.ndarray,Fs: int = 44100) -> None:
     plt.pcolormesh(t,f,Sxx,vmax=1e-6)
     plt.xlabel(u"time [sec]")
     plt.ylabel(u"frequency [Hz]")
+    plt.title(title)
     plt.show()
 
+def parse_arguments():
+    """ コマンドライン引数を解析する関数.
 
-if __name__ == "__main__":
+    入力：
+        なし
+
+    出力：
+        args: 入力のオブジェクト
+    """
     import argparse
-    # コマンドライン引数の設定
+
     parser = argparse.ArgumentParser(description="FIRフィルタを使用した音声処理プログラム")
     parser.add_argument("--filter", type=str, required=True, choices=["low", "high", "bandpass", "bandstop"],
                         help="使用するフィルタの種類を指定 (low, high, bandpass, bandstop)")
@@ -186,10 +243,17 @@ if __name__ == "__main__":
     parser.add_argument("--input", type=str, required=True, help="入力音声ファイルのパス")
     parser.add_argument("--output", type=str, default="filtered_audio.wav", help="出力音声ファイルのパス")
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    args = parse_arguments()
 
     # FIRフィルタのインスタンスを生成
-    fir = FIR(M=args.M, fc=args.fc[0], fs=args.fs)
+    if len(args.fc) == 1:
+        fir = FIR(M=args.M, fc=args.fc[0], fs=args.fs)
+    else:
+        fir = FIR(M=args.M, fc=args.fc[0], fc2=args.fc[1], fs=args.fs)
 
     # 入力信号の読み込み
     audio = read_audio(args.input)
@@ -206,21 +270,21 @@ if __name__ == "__main__":
     elif args.filter == "bandpass":
         if len(args.fc) != 2:
             raise ValueError("bandpassフィルタには2つのカットオフ周波数を指定してください")
-        filter_coeff = fir.band_pass_filter(M=args.M, fc1=args.fc[0], fc2=args.fc[1], fs=args.fs)
+        filter_coeff = fir.band_pass_filter(M=args.M, fc=args.fc[0], fc2=args.fc[1], fs=args.fs)
         title = "Band-Pass Filter"
     elif args.filter == "bandstop":
         if len(args.fc) != 2:
             raise ValueError("bandstopフィルタには2つのカットオフ周波数を指定してください")
-        filter_coeff = fir.band_elimination_filter(M=args.M, fc1=args.fc[0], fc2=args.fc[1], fs=args.fs)
+        filter_coeff = fir.band_stop_filter(M=args.M, fc=args.fc[0], fc2=args.fc[1], fs=args.fs)
         title = "Band-Stop Filter"
 
     # フィルタリングを実行
     window = np.hamming(len(filter_coeff))
-    filtered_audio = fir.filtering(audio, filter_coeff * window)
+    filtered_audio = fir.filtering(audio, filter_coeff)
 
     # フィルタの応答をプロット
-    plot_filter_response(filter_coeff * window, args.fs, title)
+    plot_filter_response(filter_coeff, args.fs, title)
 
     # スペクトログラムのプロット
-    make_spectrogram(audio, Fs=args.fs)
-    make_spectrogram(filtered_audio, Fs=args.fs)
+    make_spectrogram(audio, args.fs,"Original Audio Spectrogram")
+    make_spectrogram(filtered_audio, args.fs, "Filtered Audio Spectrogram")
