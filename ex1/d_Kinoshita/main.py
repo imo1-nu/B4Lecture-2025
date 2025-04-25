@@ -6,9 +6,9 @@ reconstructs it using ISTFT,and visualizes the original waveform,
 the spectrogram, and the reconstructed waveform.
 """
 
+import matplotlib.pyplot as plt
 import numpy as np
 import soundfile as sf
-import matplotlib.pyplot as plt
 
 # --- 音声読み込み ---
 file_path = "audio.wav"
