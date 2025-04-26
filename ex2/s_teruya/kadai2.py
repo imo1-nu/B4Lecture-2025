@@ -2,10 +2,12 @@
 # coding: utf-8
 
 """.
+
 - 時間領域におけるデジタルフィルターの実現
 - 実行コマンド
 `$ python3 kadai2.py` (サンプル音声blank.wavが適用されます)
   または `$ python3 kadai2.py (任意のwavファイル)`
+
 """
 
 import cmath
@@ -18,8 +20,7 @@ from scipy.signal import get_window, spectrogram
 
 
 def readwav(filename: str = "blank.wav"):
-    """.
-    wavファイル読み込み
+    """wavファイル読み込み.
 
     filename:
       wavファイル名(default: Disfigure - Blank [NCS Release] Music provided by NoCopyrightSounds)
@@ -34,13 +35,12 @@ def readwav(filename: str = "blank.wav"):
 
 
 def writewav(
-        rate: int,
-        data: np.ndarray,
-        datasub: np.ndarray = None,
-        filename: str = "result2.wav"
-    ):
-    """.
-    wavファイル書き出し
+    rate: int,
+    data: np.ndarray,
+    datasub: np.ndarray = None,
+    filename: str = "result2.wav"
+):
+    """wavファイル書き出し.
 
     rate:
       1秒あたりのサンプル数
@@ -65,14 +65,13 @@ class DigitalFilter:
     """デジタルフィルター(LPF, HPF, BPF, BEF)."""
 
     def __init__(
-            self,
-            filter_name: str,
-            fvals: float | tuple[float],
-            window_name: str = "boxcar",
-            size: int = 32
-        ):
-        """.
-        フィルターを時間領域で作成します
+        self,
+        filter_name: str,
+        fvals: float | tuple[float],
+        window_name: str = "boxcar",
+        size: int = 32
+    ):
+        """フィルターを時間領域で作成します.
 
         filiter_name:
           フィルターの名前(LPF, HPF, BPF, BEF)
@@ -129,8 +128,7 @@ class DigitalFilter:
         self.fvals = fvals  # 周波数の範囲
 
     def convolution(self, data: np.ndarray):
-        """.
-        入力された音声信号にフィルターを畳み込みます
+        """入力された音声信号にフィルターを畳み込みます.
 
         data:
           音声信号
@@ -144,8 +142,7 @@ class DigitalFilter:
         return result
 
     def plot(self, start: float = 0, stop: float = np.pi, accuracy: float = 0.01):
-        """.
-        フィルターを周波数領域に復元します
+        """フィルターを周波数領域に復元します.
 
         start, stop:
           作成するグラフの左端と右端
