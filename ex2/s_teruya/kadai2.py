@@ -38,7 +38,7 @@ def writewav(
     rate: int,
     data: np.ndarray,
     datasub: np.ndarray = None,
-    filename: str = "result2.wav"
+    filename: str = "result2.wav",
 ):
     """wavファイル書き出し.
 
@@ -69,7 +69,7 @@ class DigitalFilter:
         filter_name: str,
         fvals: float | tuple[float],
         window_name: str = "boxcar",
-        size: int = 32
+        size: int = 32,
     ):
         """フィルターを時間領域で作成します.
 
