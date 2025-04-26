@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-"""
-    - 時間領域におけるデジタルフィルターの実現
-    - 実行コマンド
-    `$ python3 kadai2.py` (サンプル音声blank.wavが適用されます)
-      または `$ python3 kadai2.py (任意のwavファイル)`
+""".
+- 時間領域におけるデジタルフィルターの実現
+- 実行コマンド
+`$ python3 kadai2.py` (サンプル音声blank.wavが適用されます)
+  または `$ python3 kadai2.py (任意のwavファイル)`
 """
 
-import sys
 import cmath
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,7 +18,7 @@ from scipy.signal import get_window, spectrogram
 
 
 def readwav(filename: str = "blank.wav"):
-    """
+    """.
     wavファイル読み込み
 
     filename:
@@ -33,8 +33,13 @@ def readwav(filename: str = "blank.wav"):
         sys.exit()
 
 
-def writewav(rate: int, data: np.ndarray, datasub: np.ndarray = None, filename: str = "result2.wav"):
-    """
+def writewav(
+        rate: int,
+        data: np.ndarray,
+        datasub: np.ndarray = None,
+        filename: str = "result2.wav"
+    ):
+    """.
     wavファイル書き出し
 
     rate:
@@ -57,10 +62,16 @@ def writewav(rate: int, data: np.ndarray, datasub: np.ndarray = None, filename: 
 
 
 class DigitalFilter:
-    """デジタルフィルター(LPF, HPF, BPF, BEF)"""
+    """デジタルフィルター(LPF, HPF, BPF, BEF)."""
 
-    def __init__(self, filter_name: str, fvals: float | tuple[float], window_name: str = "boxcar", size: int = 32):
-        """
+    def __init__(
+            self,
+            filter_name: str,
+            fvals: float | tuple[float],
+            window_name: str = "boxcar",
+            size: int = 32
+        ):
+        """.
         フィルターを時間領域で作成します
 
         filiter_name:
@@ -84,21 +95,25 @@ class DigitalFilter:
         elif filter_name in ["HPF", "hpf"]:
             if type(fvals) is tuple:  # 最初の値を適用
                 fvals = fvals[0]
-            filter_vals = np.sinc(size_list) - fvals / np.pi * np.sinc(fvals * size_list / np.pi)
+            filter_vals = np.sinc(size_list) - fvals / np.pi * np.sinc(
+                fvals * size_list / np.pi
+            )
         elif filter_name in ["BPF", "bpf"]:
             if type(fvals) is float:  # LPFとして処理
                 print("Warning!: filter was made as LPF")
                 filter_name = "LPF"
                 filter_vals = fvals / np.pi * np.sinc(fvals * size_list / np.pi)
             else:
-                filter_vals = fvals[1] / np.pi * np.sinc(fvals[1] * size_list / np.pi) - fvals[0] / np.pi * np.sinc(
-                    fvals[0] * size_list / np.pi
-                )
+                filter_vals = fvals[1] / np.pi * np.sinc(
+                    fvals[1] * size_list / np.pi
+                ) - fvals[0] / np.pi * np.sinc(fvals[0] * size_list / np.pi)
         elif filter_name in ["BEF", "bef"]:
             if type(fvals) is float:  # HPFとして処理
                 print("Warning!: filter was made as HPF")
                 filter_name = "HPF"
-                filter_vals = np.sinc(size_list) - fvals / np.pi * np.sinc(fvals * size_list / np.pi)
+                filter_vals = np.sinc(size_list) - fvals / np.pi * np.sinc(
+                    fvals * size_list / np.pi
+                )
             else:
                 filter_vals = np.sinc(size_list) - (
                     fvals[1] / np.pi * np.sinc(fvals[1] * size_list / np.pi)
@@ -114,7 +129,7 @@ class DigitalFilter:
         self.fvals = fvals  # 周波数の範囲
 
     def convolution(self, data: np.ndarray):
-        """
+        """.
         入力された音声信号にフィルターを畳み込みます
 
         data:
@@ -129,7 +144,7 @@ class DigitalFilter:
         return result
 
     def plot(self, start: float = 0, stop: float = np.pi, accuracy: float = 0.01):
-        """
+        """.
         フィルターを周波数領域に復元します
 
         start, stop:
@@ -142,7 +157,9 @@ class DigitalFilter:
         transfer = np.zeros(len(flist), dtype=np.complex64)
         for i in range(len(flist)):
             for n in range(-self.filter_size, self.filter_size):
-                transfer[i] += self.filter[n + self.filter_size] * cmath.exp(-1j * flist[i] * n)
+                transfer[i] += self.filter[n + self.filter_size] * cmath.exp(
+                    -1j * flist[i] * n
+                )
         # プロット
         fig, ax = plt.subplots(2, 1)
         ax[0].plot(np.abs(transfer))  # 振幅
