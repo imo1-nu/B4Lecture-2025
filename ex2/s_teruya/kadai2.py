@@ -1,8 +1,16 @@
-# kadai2
+#!/usr/bin/env python
+# coding: utf-8
+
+"""
+    - 時間領域におけるデジタルフィルターの実現
+    - 実行コマンド
+    `$ python3 kadai2.py` (サンプル音声blank.wavが適用されます)
+      または `$ python3 kadai2.py (任意のwavファイル)`
+"""
 
 import sys
-
 import cmath
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import wavfile
