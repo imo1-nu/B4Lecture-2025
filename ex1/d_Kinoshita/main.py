@@ -1,38 +1,16 @@
-"""
-STFT and ISTFT processing demo.
-
-This module reads an audio file, computes its STFT,
-reconstructs it using ISTFT,and visualizes the original waveform,
-the spectrogram, and the reconstructed waveform.
-"""
-
 import matplotlib.pyplot as plt
 import numpy as np
 import soundfile as sf
 
-# --- 音声読み込み ---
-file_path = "audio.wav"
-signal, sample_rate = sf.read(file_path)
 
-# --- パラメータ ---
-frame_size = 1024
-hop_size = 512
-window = np.hanning(frame_size)
+def load_audio(file_path):
+    """Load an audio file."""
+    signal, sample_rate = sf.read(file_path)
+    return signal, sample_rate
 
 
 def stft(x, frame_size, hop_size, window):
-    """
-    Compute the Short-Time Fourier Transform (STFT).
-
-    Parameters:
-        x (np.ndarray): Input signal.
-        frame_size (int): Size of each frame.
-        hop_size (int): Step size between frames.
-        window (np.ndarray): Window function to apply.
-
-    Returns:
-        np.ndarray: Complex STFT (shape: [frame_size // 2 + 1, num_frames]).
-    """
+    """Compute the Short-Time Fourier Transform (STFT)."""
     frames = []
     for i in range(0, len(x) - frame_size, hop_size):
         frame = x[i : i + frame_size] * window
@@ -42,18 +20,7 @@ def stft(x, frame_size, hop_size, window):
 
 
 def istft(spectrogram, frame_size, hop_size, window):
-    """
-    Perform inverse STFT to reconstruct the time-domain signal.
-
-    Parameters:
-        spectrogram (np.ndarray): STFT (complex 2D array).
-        frame_size (int): Frame size used in STFT.
-        hop_size (int): Hop size used in STFT.
-        window (np.ndarray): Window function used in STFT.
-
-    Returns:
-        np.ndarray: Reconstructed time-domain signal.
-    """
+    """Perform inverse STFT to reconstruct the time-domain signal."""
     n_frames = spectrogram.shape[1]
     output_len = (n_frames - 1) * hop_size + frame_size
     output = np.zeros(output_len)
@@ -70,49 +37,76 @@ def istft(spectrogram, frame_size, hop_size, window):
     return output
 
 
-# --- 実行 ---
-spectrogram = stft(signal, frame_size, hop_size, window)
-reconstructed_signal = istft(spectrogram, frame_size, hop_size, window)
+def save_audio(file_path, signal, sample_rate):
+    """Save audio to a file."""
+    sf.write(file_path, signal, sample_rate)
 
-# --- 書き出し（任意） ---
-sf.write("reconstructed.wav", reconstructed_signal, sample_rate)
 
-# --- 軸ラベル用 ---
-time_original = np.arange(len(signal)) / sample_rate
-time_reconstructed = np.arange(len(reconstructed_signal)) / sample_rate
-frame_times = np.arange(spectrogram.shape[1]) * hop_size / sample_rate
-freqs = np.fft.rfftfreq(frame_size, 1 / sample_rate)
+def plot_waveforms_and_spectrogram(
+    signal, reconstructed_signal, spectrogram, sample_rate, frame_size, hop_size
+):
+    """Plot original waveform, spectrogram, and reconstructed waveform."""
+    time_original = np.arange(len(signal)) / sample_rate
+    time_reconstructed = np.arange(len(reconstructed_signal)) / sample_rate
+    frame_times = np.arange(spectrogram.shape[1]) * hop_size / sample_rate
+    freqs = np.fft.rfftfreq(frame_size, 1 / sample_rate)
 
-# --- 描画 ---
-plt.figure(figsize=(14, 8))
+    plt.figure(figsize=(14, 8))
 
-# --- 元の波形 ---
-plt.subplot(3, 1, 1)
-plt.plot(time_original, signal)
-plt.title("Original Waveform")
-plt.xlabel("Time [s]")
-plt.ylabel("Amplitude")
+    # Original waveform
+    plt.subplot(3, 1, 1)
+    plt.plot(time_original, signal)
+    plt.title("Original Waveform")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Amplitude")
 
-# --- スペクトログラム ---
-plt.subplot(3, 1, 2)
-magnitude_db = 20 * np.log10(np.abs(spectrogram) + 1e-6)
-plt.imshow(
-    magnitude_db,
-    origin="lower",
-    aspect="auto",
-    cmap="viridis",
-    extent=[frame_times[0], frame_times[-1], freqs[0], freqs[-1]],
-)
-plt.title("Spectrogram (dB)")
-plt.xlabel("Time [s]")
-plt.ylabel("Frequency [Hz]")
+    # Spectrogram
+    plt.subplot(3, 1, 2)
+    magnitude_db = 20 * np.log10(np.abs(spectrogram) + 1e-6)
+    plt.imshow(
+        magnitude_db,
+        origin="lower",
+        aspect="auto",
+        cmap="viridis",
+        extent=[frame_times[0], frame_times[-1], freqs[0], freqs[-1]],
+    )
+    plt.title("Spectrogram (dB)")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Frequency [Hz]")
 
-# --- 復元された波形 ---
-plt.subplot(3, 1, 3)
-plt.plot(time_reconstructed, reconstructed_signal)
-plt.title("Reconstructed Waveform (from ISTFT)")
-plt.xlabel("Time [s]")
-plt.ylabel("Amplitude")
+    # Reconstructed waveform
+    plt.subplot(3, 1, 3)
+    plt.plot(time_reconstructed, reconstructed_signal)
+    plt.title("Reconstructed Waveform (from ISTFT)")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Amplitude")
 
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()
+
+
+def main():
+    # --- パラメータ設定 ---
+    file_path = "audio.wav"
+    frame_size = 1024
+    hop_size = 512
+    window = np.hanning(frame_size)
+
+    # --- 音声読み込み ---
+    signal, sample_rate = load_audio(file_path)
+
+    # --- STFT・ISTFT 実行 ---
+    spectrogram = stft(signal, frame_size, hop_size, window)
+    reconstructed_signal = istft(spectrogram, frame_size, hop_size, window)
+
+    # --- 書き出し（任意） ---
+    save_audio("reconstructed.wav", reconstructed_signal, sample_rate)
+
+    # --- 描画 ---
+    plot_waveforms_and_spectrogram(
+        signal, reconstructed_signal, spectrogram, sample_rate, frame_size, hop_size
+    )
+
+
+if __name__ == "__main__":
+    main()
