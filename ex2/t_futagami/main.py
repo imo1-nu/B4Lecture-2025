@@ -65,13 +65,16 @@ def convolve(input: np.ndarray, h: np.ndarray) -> np.ndarray:
     """
     N = len(input)  # 音声データの長さ
     input = np.concatenate((np.zeros(FILTER_ORDER), input))  # ゼロパディング
-    output = np.zeros(N + 2 * FILTER_ORDER)  # 出力信号のサイズ
-    for i in range(FILTER_ORDER, N + FILTER_ORDER):
-        for j in range(FILTER_ORDER + 1):
-            output[i] += h[j] * input[i - j]  # フィルタリング
+    output = np.zeros(N + FILTER_ORDER)  # 出力信号のサイズ
+    for i in range(N + FILTER_ORDER):
+        start = max(0, i - N)  # 畳み込みの開始位置
+        end = min(i, FILTER_ORDER)  # 畳み込みの終了位置
+        for j in range(start, end):
+            output[i] += h[j] * input[i - j]  # 畳み込み演算
 
-    output = output[FILTER_ORDER * 3 // 2 :]  # ゼロパディングを除去
-    output = output[:N]  # 出力信号のサイズを元に戻す
+    # 出力信号の中央部分を切り出す
+    output = output[FILTER_ORDER // 2 :]
+    output = output[:N]
     return output
 
 
