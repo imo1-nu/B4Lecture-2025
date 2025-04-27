@@ -1,3 +1,11 @@
+""" 
+STFT and ISTFT processing demo.
+
+This module loads an audio file, computes its STFT,
+reconstructs it via ISTFT, saves the reconstructed file,
+and visualizes the original waveform, spectrogram, and reconstructed waveform.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import soundfile as sf
@@ -86,6 +94,7 @@ def plot_waveforms_and_spectrogram(
 
 
 def main():
+    """Main function to perform STFT, ISTFT, and visualization."""
     # --- パラメータ設定 ---
     file_path = "audio.wav"
     frame_size = 1024
