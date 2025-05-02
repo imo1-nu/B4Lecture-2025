@@ -100,7 +100,9 @@ class LR:
                 for n in range(1, len(w)):  # 重みの更新
                     cond = (
                         outputs - np.delete(self.inputs, n, 1) @ np.delete(w, n)
-                    ) @ self.inputs[:, n]  # 更新の方向を判定
+                    ) @ self.inputs[
+                        :, n
+                    ]  # 更新の方向を判定
                     if cond > 2 * param:
                         w[n] = (cond - 2 * param) / np.sum(self.inputs[:, n] ** 2)
                     elif cond < -2 * param:
@@ -123,7 +125,9 @@ class LR:
                 for n in range(1, len(w)):  # 重みの更新
                     cond = (
                         outputs - np.delete(self.inputs, n, 1) @ np.delete(w, n)
-                    ) @ self.inputs[:, n]  # 更新の方向を判定
+                    ) @ self.inputs[
+                        :, n
+                    ]  # 更新の方向を判定
                     if cond > 2 * param[0]:
                         w[n] = (cond - 2 * param[0]) / (
                             np.sum(self.inputs[:, n] ** 2) + param[1]
@@ -191,6 +195,7 @@ class LR:
             return formula
 
     def __repr__(self):
+        """formatter対策"""
         return str(self)
 
 
@@ -287,7 +292,8 @@ if __name__ == "__main__":
 
 # ---------------------------------未使用---------------------------------#
 
-# def OLS(inputs:np.ndarray, outputs:np.ndarray, deg:int|tuple=1, reg_name:str="", param:float|tuple=0.1):
+# def OLS(inputs:np.ndarray, outputs:np.ndarray, deg:int|tuple=1, 
+#         reg_name:str="", param:float|tuple=0.1):
 #     # 入力変数を用意
 #     if type(deg) is int:    # 一次元
 #         input_exts=np.zeros((len(inputs),deg+1))    # (入力数) × d+1 に拡張
@@ -303,7 +309,8 @@ if __name__ == "__main__":
 #                 input_exts_num+=1
 #     # 式に代入
 #     if reg_name.lower()=="ridge":
-#         return np.linalg.inv(input_exts.T @ input_exts + param/2*np.identity(len(input_exts[0])))@input_exts.T@outputs
+#         return np.linalg.inv(input_exts.T @ input_exts + param/2*np.identity(len(input_exts[0])))
+#                @input_exts.T@outputs
 #     elif reg_name.lower()=="lasso":
 #         w=(np.random.random(len(input_exts[0]))+0.1)*10*param
 #         for repeat in range(10000):

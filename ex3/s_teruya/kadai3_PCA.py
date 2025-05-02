@@ -144,7 +144,9 @@ def plotPC(ax: plt.Axes, transform: np.ndarray, data: np.ndarray):
             x_map, y_map = np.meshgrid(xlist, ylist)
             z_map = (
                 nm_vec[0] * (x_map - center[0]) + nm_vec[1] * (y_map - center[1])
-            ) / abs(nm_vec[2]) + center[2]  # z軸
+            ) / abs(nm_vec[2]) + center[
+                2
+            ]  # z軸
             ax.plot_surface(x_map, y_map, z_map, alpha=0.5)
         else:
             # 軸が三つ以上の場合(一応)
