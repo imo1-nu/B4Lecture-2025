@@ -3,7 +3,9 @@
 
 """kadai3_PCA.py.
 
-説明がありません
+- 主成分分析の実装(kadai3_PCA.py)
+- 実行コマンド
+ `$ python3 kadai3_PCA.py`
 
 """
 

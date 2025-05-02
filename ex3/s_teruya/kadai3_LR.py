@@ -3,7 +3,9 @@
 
 """kadai3_LR.py.
 
-説明がありません
+- 最小二乗法による線形回帰の実装(kadai3_LR.py)
+- 実行コマンド
+ `$ python3 kadai3_LR.py`
 
 """
 
