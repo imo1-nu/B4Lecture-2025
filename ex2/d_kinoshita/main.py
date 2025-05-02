@@ -6,11 +6,11 @@ applies them to an audio file, and outputs both spectrograms and filter characte
 """
 
 import os
-
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as signal
-import matplotlib.pyplot as plt
 from scipy.io import wavfile
+
 
 def read_audio(path: str) -> tuple[int, np.ndarray]:
     """Read an audio file and convert it to mono and normalize it."""
