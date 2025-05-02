@@ -1,11 +1,25 @@
-import os
-import numpy as np
+"""
+FIRフィルタを用いた音声信号処理モジュール。
+
+このスクリプトでは、LPF・HPF・BPF・BEFのFIRフィルタを実装し、
+音声ファイルに対して適用し、スペクトログラムおよびフィルタ特性を出力します。
+"""
 import matplotlib.pyplot as plt
+import numpy as np
+import os
 from scipy.io import wavfile
 import scipy.signal as signal
 
 
 def read_audio(path: str) -> tuple[int, np.ndarray]:
+    """音声ファイルを読み込み、モノラル・正規化を行う。
+
+    Args:
+        path (str): 音声ファイルのパス。
+
+    Returns:
+        tuple[int, np.ndarray]: サンプリング周波数と正規化された音声データ。
+    """
     if not os.path.exists(path):
         return 0, np.array([])
 
@@ -17,51 +31,117 @@ def read_audio(path: str) -> tuple[int, np.ndarray]:
 
 
 def save_audio(path: str, data: np.ndarray, fs: int):
+    """正規化された音声データを16bit整数に変換し、WAVファイルとして保存する。
+
+    Args:
+        path (str): 保存先パス。
+        data (np.ndarray): 音声データ。
+        fs (int): サンプリング周波数。
+    """
     scaled = np.int16(np.clip(data, -1.0, 1.0) * 32767)
     wavfile.write(path, fs, scaled)
 
 
 class FIR:
+    """FIRフィルタの生成と畳み込みを行うクラス。"""
+
     def __init__(self, M, fc, fs, fc2=None):
+        """FIRフィルタの初期化。
+
+        Args:
+            M (int): フィルタの半分の長さ（遅延）。
+            fc (float): カットオフ周波数1。
+            fs (int): サンプリング周波数。
+            fc2 (float, optional): カットオフ周波数2（バンドパスやバンドストップ用）。
+        """
         self.M = M
         self.fc = fc
         self.fc2 = fc2
         self.fs = fs
 
     def convolution_calculate(self, x, h):
+        """畳み込み計算を自前で実装する。
+
+        Args:
+            x (np.ndarray): 入力信号。
+            h (np.ndarray): フィルタ係数。
+
+        Returns:
+            np.ndarray: 畳み込み出力。
+        """
         y = np.zeros(len(x) - len(h) + 1)
         for n in range(len(y)):
-            y[n] = np.sum(x[n:n + len(h)] * h)
+            y[n] = np.sum(x[n : n + len(h)] * h)
         return y
 
     def low_pass_filter(self, fc):
+        """ローパスフィルタのインパルス応答を生成する。
+
+        Args:
+            fc (float): カットオフ周波数。
+
+        Returns:
+            np.ndarray: フィルタ係数。
+        """
         omega = 2 * fc / self.fs
         n = np.arange(-self.M, self.M + 1)
         h = omega * np.sinc(omega * n)
         return h
 
     def high_pass_filter(self):
+        """ハイパスフィルタのインパルス応答を生成する。
+
+        Returns:
+            np.ndarray: フィルタ係数。
+        """
         omega = 2 * self.fc / self.fs
         n = np.arange(-self.M, self.M + 1)
         h = np.sinc(n) - omega * np.sinc(omega * n)
         return h
 
     def band_pass_filter(self):
+        """バンドパスフィルタのインパルス応答を生成する。
+
+        Returns:
+            np.ndarray: フィルタ係数。
+        """
         low = self.low_pass_filter(self.fc2)
         high = self.low_pass_filter(self.fc)
         h = low - high
         return h
 
     def band_stop_filter(self):
+        """バンドストップフィルタのインパルス応答を生成する。
+
+        Returns:
+            np.ndarray: フィルタ係数。
+        """
         h = np.sinc(np.arange(-self.M, self.M + 1)) - self.band_pass_filter()
         return h
 
     def filtering(self, audio: np.ndarray, filt: np.ndarray) -> np.ndarray:
+        """ハミング窓を適用してフィルタ処理を行う。
+
+        Args:
+            audio (np.ndarray): 入力音声。
+            filt (np.ndarray): フィルタ係数。
+
+        Returns:
+            np.ndarray: フィルタ後の音声。
+        """
         window = np.hamming(len(filt))
         return self.convolution_calculate(audio, filt * window)
 
 
 def plot_filter_response(h: np.ndarray, fs: int, title: str, folder: str):
+    """フィルタの振幅・位相特性をプロットし、画像保存する。
+
+    Args:
+        h (np.ndarray): フィルタ係数。
+        fs (int): サンプリング周波数。
+        title (str): グラフのタイトル。
+        folder (str): 保存先フォルダ。
+    """
     N = 512
     H = np.fft.rfft(h, n=N)
     w = np.fft.rfftfreq(N, d=1 / fs)
@@ -91,13 +171,21 @@ def plot_filter_response(h: np.ndarray, fs: int, title: str, folder: str):
 
 
 def make_spectrogram(audio: np.ndarray, Fs: int, title: str, folder: str):
+    """音声のスペクトログラムを作成・保存する。
+
+    Args:
+        audio (np.ndarray): 音声データ。
+        Fs (int): サンプリング周波数。
+        title (str): グラフのタイトル。
+        folder (str): 保存先フォルダ。
+    """
     f, t, Sxx = signal.spectrogram(audio, fs=Fs, nperseg=512)
     plt.figure()
-    plt.pcolormesh(t, f, Sxx, shading='gouraud', vmax=1e-6)
+    plt.pcolormesh(t, f, Sxx, shading="gouraud", vmax=1e-6)
     plt.xlabel("time [sec]")
     plt.ylabel("frequency [Hz]")
     plt.title(title)
-    plt.colorbar(label='Power')
+    plt.colorbar(label="Power")
     plt.ylim([0, 8000])
     plt.savefig(os.path.join(folder, f"{title}_spectrogram.png"))
     plt.show()
@@ -118,7 +206,6 @@ if __name__ == "__main__":
 
     fir = FIR(M=M, fc=fc, fc2=fc2, fs=fs)
 
-    # オリジナルの音声のスペクトログラムを1回だけ表示
     make_spectrogram(audio, fs, "Original Audio Spectrogram", output_folder)
 
     filters = [
@@ -132,7 +219,9 @@ if __name__ == "__main__":
         filtered = fir.filtering(audio, filter_coeff)
 
         plot_filter_response(filter_coeff, fs, title, output_folder)
-        make_spectrogram(filtered, fs, f"Filtered Audio Spectrogram ({title})", output_folder)
+        make_spectrogram(
+            filtered, fs, f"Filtered Audio Spectrogram ({title})", output_folder
+        )
 
         save_audio(output_name, filtered, fs)
         print(f"フィルタ後の音声を保存しました: {output_name}")
