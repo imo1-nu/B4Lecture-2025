@@ -6,6 +6,7 @@ applies them to an audio file, and outputs both spectrograms and filter characte
 """
 
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as signal
