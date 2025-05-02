@@ -195,7 +195,7 @@ class LR:
             return formula
 
     def __repr__(self):
-        """formatter対策"""
+        """formatter対策."""
         return str(self)
 
 
@@ -292,7 +292,7 @@ if __name__ == "__main__":
 
 # ---------------------------------未使用---------------------------------#
 
-# def OLS(inputs:np.ndarray, outputs:np.ndarray, deg:int|tuple=1, 
+# def OLS(inputs:np.ndarray, outputs:np.ndarray, deg:int|tuple=1,
 #         reg_name:str="", param:float|tuple=0.1):
 #     # 入力変数を用意
 #     if type(deg) is int:    # 一次元
