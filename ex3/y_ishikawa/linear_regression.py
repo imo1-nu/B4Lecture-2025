@@ -2,6 +2,7 @@
 
 import argparse
 from pathlib import Path
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -144,7 +145,13 @@ def plot_scatter(  # noqa: PLR0913
     plt.show()
 
 
-def linear_regression(df: pd.DataFrame, degree: int) -> np.ndarray:
+def linear_regression(
+    df: pd.DataFrame,
+    degree: int,
+    norm: str = "",
+    lambda1: float = 0.1,
+    lambda2: float = 0.1,
+) -> np.ndarray:
     """Perform polynomial linear regression using least squares.
 
     Parameters
@@ -154,6 +161,12 @@ def linear_regression(df: pd.DataFrame, degree: int) -> np.ndarray:
         and the last column is the predictor variable.
     degree : int
         The degree of the polynomial to fit for each input feature.
+    norm : Literal["ridge", "lasso", "elastic_net", ""]
+        Method of normalization to apply. ("ridge", "lasso", "elastic_net")
+    lambda1 : float
+        Parameter used in L1 norm (lasso, elastic_net).
+    lambda2 : float
+        Parameter used in L2 norm (ridge, elastic_net).
 
     Returns
     -------
@@ -170,7 +183,23 @@ def linear_regression(df: pd.DataFrame, degree: int) -> np.ndarray:
         for d in range(1, degree + 1):
             X[:, i * degree + d] = df.iloc[:, i] ** d
 
-    return np.linalg.inv(X.T @ X) @ X.T @ df.iloc[:, -1]
+    # OLS
+    match norm:
+        # Lasso norm
+        case "lasso":
+            pass
+        # Ridge norm
+        case "ridge":
+            return (
+                np.linalg.inv(X.T @ X + lambda2 * np.eye(X.shape[1]))
+                @ X.T
+                @ df.iloc[:, -1]
+            )
+        # Elastic Net
+        case "elastic_net":
+            pass
+        case _:
+            return np.linalg.inv(X.T @ X) @ X.T @ df.iloc[:, -1]
 
 
 class NameSpace:
@@ -184,11 +213,20 @@ class NameSpace:
         Path where the processed output will be saved.
     degrees : list[int]
         List of polynomial degrees to be used in regression.
+    norm : Literal["lasso", "ridge", "elastic_net", ""]
+        Method of normalization to apply. ("lasso", "ridge", "elastic_net")
+    lambda1 : float
+        Parameter used in L1 norm (lasso, elastic_net).
+    lambda2 : float
+        Parameter used in L2 norm (ridge, elastic_net).
     """
 
     input_paths: list[Path]
     output_dir: Path
     degrees: list[int]
+    norm: Literal["lasso", "ridge", "elastic_net", ""]
+    lambda1: float
+    lambda2: float
 
 
 def parse_args() -> NameSpace:
@@ -197,7 +235,7 @@ def parse_args() -> NameSpace:
     Returns
     -------
     arguments : NameSpace
-        Parsed arguments including input/output paths, regression degrees.
+        Parsed arguments including input/output paths, regression degrees, parameters.
     """
     # data path
     SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -227,6 +265,25 @@ def parse_args() -> NameSpace:
         default=[1, 3, 2],
         help="Degree of linear regression.",
     )
+    parser.add_argument(
+        "--norm",
+        type=str,
+        default="",
+        choices=["lasso", "ridge", "elastic_net"],
+        help="Method of normalization. (lasso, ridge, elastic_net).",
+    )
+    parser.add_argument(
+        "--lambda1",
+        type=float,
+        default=0.1,
+        help="Parameter for L1 norm (lasso, elastic_net).",
+    )
+    parser.add_argument(
+        "--lambda2",
+        type=float,
+        default=0.1,
+        help="Parameter for L2 norm (ridge, elastic_net).",
+    )
 
     return parser.parse_args(namespace=NameSpace())
 
@@ -237,6 +294,9 @@ if __name__ == "__main__":
     input_paths = args.input_paths
     output_dir = args.output_dir
     degrees = args.degrees
+    norm = args.norm
+    lambda1 = args.lambda1
+    lambda2 = args.lambda2
 
     # load data
     data: list[pd.DataFrame] = []
@@ -253,7 +313,9 @@ if __name__ == "__main__":
     # plot linear regression results
     for df, degree in zip(data, degrees, strict=True):
         # estimate weight with linear regression
-        weights = linear_regression(df, degree)
+        weights = linear_regression(
+            df, degree, norm=norm, lambda1=lambda1, lambda2=lambda2
+        )
 
         title = df.attrs["title"]
         plot_scatter(
