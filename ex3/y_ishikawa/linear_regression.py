@@ -260,7 +260,7 @@ def linear_regression(  # noqa: PLR0913
 
 
 class NameSpace:
-    """Configuration namespace for audio processing parameters.
+    """Configuration namespace for linear regression processing parameters.
 
     Parameters
     ----------
