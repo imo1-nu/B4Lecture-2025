@@ -96,20 +96,19 @@ class PCA:
     def contribution_based_reduction(
         self, contribution: float
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Reduce the data to the smallest number of dimensions such that the cumulative
-        contribution ratio reaches the specified threshold.
+        """Reduce the data to the smallest number of dimensions such that the cumulative contribution ratio reaches the specified threshold.
 
-        Parameters
-        ----------
-        contribution : float
-            Minimum cumulative contribution ratio to retain (e.g., 0.9 for 90%).
+                Parameters
+                ----------
+                contribution : float
+                    Minimum cumulative contribution ratio to retain (e.g., 0.9 for 90%).
 
-        Returns
-        -------
-        reduced_data : np.ndarray
-            Dimension-reduced data.
-        transform_mat : np.ndarray
-            Transformation matrix used for dimensionality reduction.
+                Returns
+                -------
+                reduced_data : np.ndarray
+                    Dimension-reduced data.
+                transform_mat : np.ndarray
+                    Transformation matrix used for dimensionality reduction.
         """
         tmp_sum = 0
         for i, rate in enumerate(self.contributions, start=1):
@@ -154,7 +153,6 @@ def plot_scatter(  # noqa: PLR0913
     zlabel : str, optional, default r"$x_3$"
         The label for the z-axis, used only for 3D plots.
     """
-
     # reset plt
     fig = plt.figure()
 
@@ -243,7 +241,6 @@ def parse_args() -> NameSpace:
     arguments : NameSpace
         Parsed arguments including output directory.
     """
-
     # prepare arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(

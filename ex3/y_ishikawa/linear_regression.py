@@ -62,7 +62,6 @@ def plot_scatter(  # noqa: PLR0913
         label : str
             A LaTeX-formatted string representing the regression equation.
         """
-
         if dimension == DIMENSION_2D:
             label = rf"${ylabel.replace('$', '')} = {round(weights[0], 3)}"
             for d, weight in enumerate(weights[1:], start=1):
