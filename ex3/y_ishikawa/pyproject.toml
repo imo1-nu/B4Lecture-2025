@@ -4,7 +4,7 @@ line-length = 88
 indent-width = 4
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "PLR", "B", "ANN"]
+select = ["E", "F", "I", "PLR", "B", "ANN", "D"]
 fixable = ["ALL"]
 unfixable = []
 
