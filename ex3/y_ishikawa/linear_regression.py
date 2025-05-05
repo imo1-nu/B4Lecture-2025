@@ -145,12 +145,31 @@ def plot_scatter(  # noqa: PLR0913
     plt.show()
 
 
-def linear_regression(
+def soft_threshold(x: np.ndarray, lam: float) -> np.ndarray:
+    """Apply soft thresholding to the input array.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Input array of values to be thresholded.
+    lam : float
+        Threshold value. Elements with absolute value less than `lam` will be zero.
+
+    Returns
+    -------
+    np.ndarray
+        Array after applying soft thresholding.
+    """
+    return np.sign(x) * np.maximum(np.abs(x) - lam, 0.0)
+
+
+def linear_regression(  # noqa: PLR0913
     df: pd.DataFrame,
     degree: int,
     norm: str = "",
     lambda1: float = 0.1,
     lambda2: float = 0.1,
+    threshold: float = 1e-7,
 ) -> np.ndarray:
     """Perform polynomial linear regression using least squares.
 
@@ -167,39 +186,56 @@ def linear_regression(
         Parameter used in L1 norm (lasso, elastic_net).
     lambda2 : float
         Parameter used in L2 norm (ridge, elastic_net).
+    threshold:
+        Threshold to stop weight update loop (lasso, elastic_net).
 
     Returns
     -------
-    np.ndarray
+    weights: np.ndarray
         Coefficients of the polynomial linear regression model.
     """
     # get size
-    _, dimension = df.shape
+    data_num, dimension = df.shape
+    term_num = (dimension - 1) * degree + 1
 
     # convert data
     # 1 + x_0 + x_0^2 + ... + x_0^degree + x_1 + x_1^2 + ... + x_1^degree + ...
-    X = np.ones((len(df), (dimension - 1) * degree + 1))
+    X = np.ones((data_num, term_num))
     for i in range(dimension - 1):
         for d in range(1, degree + 1):
             X[:, i * degree + d] = df.iloc[:, i] ** d
+    y = df.iloc[:, -1]
 
     # OLS
     match norm:
         # Lasso norm
         case "lasso":
-            pass
+            # calculate square sum
+            square_sum = np.sum(X**2, axis=0)
+
+            weights = np.random.rand(term_num)
+            pre_weights = np.ones_like(weights)
+            # loop until update stop
+            while np.sum(np.abs(weights - pre_weights)) > threshold:
+                # copy weights
+                pre_weights = weights.copy()
+
+                # update bias
+                weights[0] = np.sum(y - X[:, 1:] @ weights[1:]) / data_num
+                # update weights
+                for i in range(1, term_num):
+                    tmp = (y - np.delete(X, i, 1) @ np.delete(weights, i)) @ X[:, i]
+
+                    weights[i] = soft_threshold(tmp, lambda1) / square_sum[i]
+            return weights
         # Ridge norm
         case "ridge":
-            return (
-                np.linalg.inv(X.T @ X + lambda2 * np.eye(X.shape[1]))
-                @ X.T
-                @ df.iloc[:, -1]
-            )
+            return np.linalg.inv(X.T @ X + lambda2 * np.eye(X.shape[1])) @ X.T @ y
         # Elastic Net
         case "elastic_net":
             pass
         case _:
-            return np.linalg.inv(X.T @ X) @ X.T @ df.iloc[:, -1]
+            return np.linalg.inv(X.T @ X) @ X.T @ y
 
 
 class NameSpace:
@@ -219,6 +255,8 @@ class NameSpace:
         Parameter used in L1 norm (lasso, elastic_net).
     lambda2 : float
         Parameter used in L2 norm (ridge, elastic_net).
+    threshold : float
+        Threshold to stop weight update loop (lasso, elastic_net).
     """
 
     input_paths: list[Path]
@@ -227,6 +265,7 @@ class NameSpace:
     norm: Literal["lasso", "ridge", "elastic_net", ""]
     lambda1: float
     lambda2: float
+    threshold: float
 
 
 def parse_args() -> NameSpace:
@@ -283,6 +322,12 @@ def parse_args() -> NameSpace:
         type=float,
         default=0.1,
         help="Parameter for L2 norm (ridge, elastic_net).",
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=1e-7,
+        help="Threshold to stop weight update loop (lasso, elastic_net).",
     )
 
     return parser.parse_args(namespace=NameSpace())
