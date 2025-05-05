@@ -363,6 +363,7 @@ if __name__ == "__main__":
     norm = args.norm
     lambda1 = args.lambda1
     lambda2 = args.lambda2
+    threshold = args.threshold
 
     # load data
     data: list[pd.DataFrame] = []
@@ -380,7 +381,7 @@ if __name__ == "__main__":
     for df, degree in zip(data, degrees, strict=True):
         # estimate weight with linear regression
         weights = linear_regression(
-            df, degree, norm=norm, lambda1=lambda1, lambda2=lambda2
+            df, degree, norm=norm, lambda1=lambda1, lambda2=lambda2, threshold=threshold
         )
 
         title = df.attrs["title"]
