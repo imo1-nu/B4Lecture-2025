@@ -233,7 +233,28 @@ def linear_regression(  # noqa: PLR0913
             return np.linalg.inv(X.T @ X + lambda2 * np.eye(X.shape[1])) @ X.T @ y
         # Elastic Net
         case "elastic_net":
-            pass
+            # calculate square sum
+            square_sum = np.sum(X**2, axis=0)
+
+            weights = np.random.rand(term_num)
+            pre_weights = np.ones_like(weights)
+            # loop until update stop
+            while np.sum(np.abs(weights - pre_weights)) > threshold:
+                # copy weights
+                pre_weights = weights.copy()
+
+                # update bias
+                weights[0] = np.sum(y - X[:, 1:] @ weights[1:]) / (
+                    data_num + 2 * lambda2
+                )
+                # update weights
+                for i in range(1, term_num):
+                    tmp = (y - np.delete(X, i, 1) @ np.delete(weights, i)) @ X[:, i]
+
+                    weights[i] = soft_threshold(tmp, lambda1) / (
+                        square_sum[i] + 2 * lambda2
+                    )
+            return weights
         case _:
             return np.linalg.inv(X.T @ X) @ X.T @ y
 
