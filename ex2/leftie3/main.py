@@ -4,10 +4,12 @@ import argparse
 import wave
 from pathlib import Path
 import numpy as np
+import scipy
+import matplotlib.pyplot as plt
 
 
 def convolve(x: np.ndarray, h: np.ndarray) -> np.ndarray:
-    """Convolve two 1-D arrays and return the result
+    """Convolve two 1-D arrays and return the result.
 
     Params:
         x (ndarray): First 1-D input array
@@ -41,6 +43,27 @@ def convolve(x: np.ndarray, h: np.ndarray) -> np.ndarray:
     return y.astype(np.int16)
 
 
+def lpf(size: int, cutoff: float, samplerate: int) -> np.ndarray:
+    """Return the coefficients of a low-pass filter.
+
+    Params:
+        size (int): The size of the filter
+        cutoff (float): The desired cutoff frequency in Hz
+        samplerate (int): The sampling rate of the relevant signal.
+    Returns:
+        h (ndarray): Filter coefficient array
+    """
+    # Cutoff frequency as fraction of sample rate for sinc equation
+    cutoff = cutoff / samplerate
+
+    # Calculate sinc filter
+    h = 2 * cutoff * np.sinc(2 * cutoff * np.arange(-(size / 2), size / 2 + 1))
+
+    # Windowing
+
+    return h
+
+
 def main(args) -> None:
     """Main routine.
 
@@ -50,31 +73,86 @@ def main(args) -> None:
     """
     # Open .wav file with builtin python interface
     with wave.open(args.file, "rb") as file:
-        # Get number of audio frames
+        # Number of audio frames
         nframes = file.getnframes()
+        # Sample rate
+        samplerate = file.getframerate()
         # Read all frames and close file
         buffer = file.readframes(nframes)
 
     # Copy bytes to numpy array
     a = np.frombuffer(buffer, dtype=np.int16)
 
-    h = np.array([1, 2, 3, 3, 3])
+    # Calculate filter coefficients
+    h = lpf(99, 1000, samplerate)
 
-    y = np.convolve(a[:100], h)
-    print(y)
-    y = convolve(a[:100], h)
-    print(y)
+    y = np.convolve(a, h)
+    print(y[:100])
+    y = convolve(a, h)
+    print(y[:100])
+
+    # -----Plotting-----
+
+    # Filter information
+    plt.figure(1, (8, 6))
+
+    # Frequency response
+    FFT_SIZE = 1024
+    H = np.fft.rfft(h, FFT_SIZE)
+    H_dB = 20 * np.log10(np.abs(H) + 1e-10)
+    sample_freqs = np.fft.rfftfreq(FFT_SIZE, 1 / samplerate)
+
+    plt.subplot(211)
+    plt.plot(sample_freqs, H_dB)
+    plt.ylim(bottom=-90)
+    plt.title("Filter frequency response")
+    plt.xlabel("Frequency")
+    plt.ylabel("Amplitude (dB)")
+    plt.grid(True, linestyle="--")
+
+    # Phase response
+    plt.subplot(212)
+    plt.plot(sample_freqs, np.unwrap(np.angle(H)))
+    plt.title("Filter phase response")
+    plt.xlabel("Frequency")
+    plt.ylabel("Phase (rad)")
+    plt.grid(True, linestyle="--")
+
+    plt.tight_layout(h_pad=1.2)  # Padding to prevent text overlap
+
+    # Spectrograms
+    plt.figure(2, (8, 4))
+
+    # Source
+    plt.subplot(121)
+    plt.title("Source")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Frequency")
+    f, t, Sxx = scipy.signal.spectrogram(a, samplerate)
+    plt.pcolormesh(t, f, Sxx, norm="log")
+
+    # Filtered
+    plt.subplot(122)
+    plt.title("Filtered")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Frequency")
+    f, t, Sxx = scipy.signal.spectrogram(y, samplerate)
+    plt.pcolormesh(t, f, Sxx, norm="log")
+
+    plt.tight_layout(h_pad=1.2)  # Padding to prevent text overlap
+
+    plt.show()
 
 
 if __name__ == "__main__":
     # Parse input arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("file")
-    args = parser.parse_args()
+    parsed_args = parser.parse_args()
 
-    filepath = Path(args.file)
+    filepath = Path(parsed_args.file)
 
     if filepath.is_file():
-        main(args)
+        main(parsed_args)
     else:
         raise FileNotFoundError(f"{filepath} does not exist or is not a file.")
