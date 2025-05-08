@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import scipy
 import matplotlib.pyplot as plt
+import scipy.io.wavfile as wavfile
 
 
 def convolve(x: np.ndarray, h: np.ndarray) -> np.ndarray:
@@ -86,10 +87,10 @@ def main(args) -> None:
     # Calculate filter coefficients
     h = lpf(99, 1000, samplerate)
 
-    y = np.convolve(a, h)
-    print(y[:100])
     y = convolve(a, h)
-    print(y[:100])
+
+    # Write output signal to file
+    wavfile.write(f"{args.file[:-4]}_filtered.wav", samplerate, y)
 
     # -----Plotting-----
 
@@ -129,7 +130,7 @@ def main(args) -> None:
     plt.xlabel("Time (s)")
     plt.ylabel("Frequency")
     f, t, Sxx = scipy.signal.spectrogram(a, samplerate)
-    plt.pcolormesh(t, f, Sxx, norm="log")
+    plt.pcolormesh(t, f, Sxx, norm="symlog")
 
     # Filtered
     plt.subplot(122)
@@ -137,7 +138,8 @@ def main(args) -> None:
     plt.xlabel("Time (s)")
     plt.ylabel("Frequency")
     f, t, Sxx = scipy.signal.spectrogram(y, samplerate)
-    plt.pcolormesh(t, f, Sxx, norm="log")
+    plt.pcolormesh(t, f, Sxx, norm="symlog")
+    print(Sxx[:1000])
 
     plt.tight_layout(h_pad=1.2)  # Padding to prevent text overlap
 
