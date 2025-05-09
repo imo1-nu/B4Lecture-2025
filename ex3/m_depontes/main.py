@@ -29,7 +29,7 @@ def read_csv(path: str) -> np.ndarray:
     
     return data
 
-def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None) -> None:
+def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None, pca = None) -> None:
     """散布図を作成する関数.
 
     入力：
@@ -39,21 +39,52 @@ def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None) -> None:
         None(散布図を出力)
     """
     fig = plt.figure()
-    if pred is None:
-        if data.shape[0] == 2:
-            
-            ax = fig.add_subplot(1,1,1)
-            ax.scatter(data[0], data[1])
-            ax.set_title(title)
-            ax.set_xlabel("x")
-            ax.set_ylabel("y")
-        elif data.shape[0] == 3:
-            ax = fig.add_subplot(projection="3d")
-            ax.scatter(data[0], data[1], data[2])
-            ax.set_title(title)
-            ax.set_xlabel("x")
-            ax.set_ylabel("y")
-            ax.set_zlabel("z")
+    if pred is None :
+        if pca is None:
+            if data.shape[0] == 2:
+                
+                ax = fig.add_subplot(1,1,1)
+                ax.scatter(data[0], data[1])
+                ax.set_title(title)
+                ax.set_xlabel("x")
+                ax.set_ylabel("y")
+            elif data.shape[0] == 3:
+                ax = fig.add_subplot(projection="3d")
+                ax.scatter(data[0], data[1], data[2])
+                ax.set_title(title)
+                ax.set_xlabel("x")
+                ax.set_ylabel("y")
+                ax.set_zlabel("z")
+        
+        else:
+            if data.shape[0] == 2:
+                ax = fig.add_subplot(1, 1, 1)
+                ax.scatter(data[0], data[1])
+                ax.set_title(title)
+                ax.set_xlabel("x")
+                ax.set_ylabel("y")
+
+                # 主成分軸の描画
+                origin = pca.means  # データの平均点
+                for vec in pca.eigenvectors[:2]:
+                    line_x = np.linspace(min(data[0]), max(data[0]), 100)
+                    line_y = origin[1] + (vec[1] / vec[0]) * (line_x - origin[0])
+                    ax.plot(line_x, line_y, color="r", linestyle="--")
+                ax.legend()
+            elif data.shape[0] == 3:
+                ax = fig.add_subplot(projection="3d")
+                ax.scatter(data[0], data[1], data[2])
+                ax.set_title(title)
+                ax.set_xlabel("x")
+                ax.set_ylabel("y")
+                ax.set_zlabel("z")
+
+                origin = pca.means  # データの平均点
+                for vec in pca.eigenvectors[:2]:
+                    line_x = np.linspace(min(data[0]), max(data[0]), 100)
+                    line_y = origin[1] + (vec[1] / vec[0]) * (line_x - origin[0])
+                    ax.plot(line_x, line_y, color="r", linestyle="--")
+                ax.legend()
 
     else:
         if data.shape[0] == 2:
@@ -231,6 +262,9 @@ class PCA:
     ):
         self.n_components = n_components
         self.A = None
+        self.eigenvalues = None
+        self.eigenvectors = None
+        self.means = None
 
     def compute_S(
         self,
@@ -252,40 +286,40 @@ class PCA:
         """
         eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
         index = np.argsort(eigenvalues)[::-1]
-        eigenvalues = eigenvalues[index]
-        eigenvectors = eigenvectors[:, index].T
+        self.eigenvalues = eigenvalues[index]
+        self.eigenvectors = eigenvectors[:, index].T
 
-        print(eigenvalues)
-        print(eigenvectors)
-        return eigenvalues, eigenvectors
+        return self.eigenvalues, self.eigenvectors
 
     def fit(
         self,
-        X_train: np.ndarray,
+        X: np.ndarray,
     ) -> np.ndarray:
         """分散最大基準に基づき，変換行列を学習する．"""
 
         # 特徴ベクトルの総数を取得
         
-        n = len(X_train)
+        n = len(X)
 
         # 特徴ベクトルの分散共分散行列を計算
-        S = self.compute_S(X_train, X_train.mean(axis=0))/n
+        self.means = X.mean(axis=1)
+        centered_data = X - self.means[:,np.newaxis]
+        S = self.compute_S(centered_data.T, np.zeros(centered_data.shape[0]))/n
 
         # 分散共分散行列から固有値及び固有値ベクトルを計算し，固有値の大きい順に整列
         eigenvalues, eigenvectors = self.compute_sorted_eigen(S)
 
         # 上位n_components個の固有値ベクトルを変換行列として抽出
         self.A = eigenvectors[:self.n_components]
-
+        print(self.A.shape)
         return self.A
 
     def transform(
         self,
-        X_test: np.ndarray,
+        X: np.ndarray,
     ) -> np.ndarray:
         """学習した変換行列によって特徴量ベクトルを射影する．"""
-        return np.dot(X_test, self.A.T)
+        return np.dot(X, self.A.T)
     
         
 def parse_arguments():
@@ -341,14 +375,16 @@ if __name__ == "__main__":
         pca = PCA(n_components=args.M)
         data = read_csv(args.path)
         pca.fit(data)
-        transformed_data = pca.transform(data)
-        make_scatter(data, "PCA")
-        make_scatter(transformed_data.T, "PCA")
+        if data.shape[0] == args.M:
+            make_scatter(data, f"PCA of {args.path.split('/')[-1].split('.')[0]}", pca = pca)
+        else:
+            transformed_data = pca.transform(data)
+            make_scatter(transformed_data, f"Dimension Division of {args.path.split('/')[-1].split('.')[0]}")
 
     elif args.mode == "linear":
         linearRegression = LinearRegression(path=args.path,M=args.M,model=args.model)
         linearRegression.fit(args.path)
         data,pred = linearRegression.predict()
         make_scatter(data, "scatter")
-        make_scatter(data, "linearRegression", pred)
+        make_scatter(data, "linearRegression", pred = pred)
 
