@@ -225,9 +225,69 @@ class LinearRegression:
         return self.data,y_pred
     
 class PCA:
+    def __init__(
+        self,
+        n_components: int = 2,
+    ):
+        self.n_components = n_components
+        self.A = None
+
+    def compute_S(
+        self,
+        X: np.ndarray,
+        means: np.ndarray,
+    ) ->  np.ndarray:
+        """観測値ベクトルの集合およびその期待値ベクトルから変動行列を計算し，返す．
+        """
+        S = 0
+        for i in range(len(X)):
+            S += np.outer((X[i]-means),(X[i]-means).T)
+        return S
+
+    def compute_sorted_eigen(
+        self,
+        cov_matrix: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """分散共分散行列から固有値および固有ベクトルを計算し，それぞれ固有値の降順に並べて返す．
+        """
+        eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
+        index = np.argsort(eigenvalues)[::-1]
+        eigenvalues = eigenvalues[index]
+        eigenvectors = eigenvectors[:, index].T
+
+        print(eigenvalues)
+        print(eigenvectors)
+        return eigenvalues, eigenvectors
+
+    def fit(
+        self,
+        X_train: np.ndarray,
+    ) -> np.ndarray:
+        """分散最大基準に基づき，変換行列を学習する．"""
+
+        # 特徴ベクトルの総数を取得
+        
+        n = len(X_train)
+
+        # 特徴ベクトルの分散共分散行列を計算
+        S = self.compute_S(X_train, X_train.mean(axis=0))/n
+
+        # 分散共分散行列から固有値及び固有値ベクトルを計算し，固有値の大きい順に整列
+        eigenvalues, eigenvectors = self.compute_sorted_eigen(S)
+
+        # 上位n_components個の固有値ベクトルを変換行列として抽出
+        self.A = eigenvectors[:self.n_components]
+
+        return self.A
+
+    def transform(
+        self,
+        X_test: np.ndarray,
+    ) -> np.ndarray:
+        """学習した変換行列によって特徴量ベクトルを射影する．"""
+        return np.dot(X_test, self.A.T)
     
         
-
 def parse_arguments():
     """コマンドライン引数を解析する関数.
 
@@ -251,8 +311,7 @@ def parse_arguments():
     )
     parser.add_argument(
         "--path",
-        type=float,
-        nargs="*",
+        type=str,
         required=True,
         help="データのパス",
     )
@@ -260,13 +319,13 @@ def parse_arguments():
         "--M",
         type=int,
         required=True,
-        help="次数",
+        help="(linearの場合)投影する次元数、(PCAの場合)削減後の次元数を指定",
     )
     parser.add_argument(
         "--model",
         type=str,
         default="normal",
-        choises=["normal","Ridge","Lasso","Elastic"],
+        choices=["normal","Ridge","Lasso","Elastic"],
         help="(線形回帰の場合)モデルを指定（標準：normal）",
     )
     return parser.parse_args()
@@ -278,8 +337,18 @@ if __name__ == "__main__":
 
     args = parse_arguments()
 
-    linearRegression = LinearRegression(path=args.path,M=args.M,model=args.model)
-    linearRegression.fit(args.path)
-    data,pred = linearRegression.predict()
-    make_scatter(data, "linearRegression", pred)
+    if args.mode == "pca":
+        pca = PCA(n_components=args.M)
+        data = read_csv(args.path)
+        pca.fit(data)
+        transformed_data = pca.transform(data)
+        make_scatter(data, "PCA")
+        make_scatter(transformed_data.T, "PCA")
+
+    elif args.mode == "linear":
+        linearRegression = LinearRegression(path=args.path,M=args.M,model=args.model)
+        linearRegression.fit(args.path)
+        data,pred = linearRegression.predict()
+        make_scatter(data, "scatter")
+        make_scatter(data, "linearRegression", pred)
 
