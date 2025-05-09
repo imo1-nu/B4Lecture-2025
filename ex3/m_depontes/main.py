@@ -66,7 +66,7 @@ def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None, pca = No
 
                 # 主成分軸の描画
                 origin = pca.means  # データの平均点
-                for vec in pca.eigenvectors[:2]:
+                for vec in pca.eigenvectors[:2].T:
                     line_x = np.linspace(min(data[0]), max(data[0]), 100)
                     line_y = origin[1] + (vec[1] / vec[0]) * (line_x - origin[0])
                     ax.plot(line_x, line_y, color="r", linestyle="--")
@@ -80,11 +80,19 @@ def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None, pca = No
                 ax.set_zlabel("z")
 
                 origin = pca.means  # データの平均点
-                for vec in pca.eigenvectors[:2]:
-                    line_x = np.linspace(min(data[0]), max(data[0]), 100)
-                    line_y = origin[1] + (vec[1] / vec[0]) * (line_x - origin[0])
-                    ax.plot(line_x, line_y, color="r", linestyle="--")
-                ax.legend()
+                for vec in pca.eigenvectors[:,:3].T:
+                    line_x = np.linspace(min(data[2]), max(data[2]), 100)  # 主成分軸の範囲を調整
+                    line_y = origin[1] + vec[1] * line_x
+                    line_z = origin[2] + vec[2] * line_x
+                    ax.plot(
+                        origin[0] + vec[0] * line_x,
+                        line_y,
+                        line_z,
+                        color="r",
+                        linestyle="--",
+                        label="Principal Component",
+                    )
+                # ax.legend()
 
     else:
         if data.shape[0] == 2:
@@ -287,7 +295,7 @@ class PCA:
         eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
         index = np.argsort(eigenvalues)[::-1]
         self.eigenvalues = eigenvalues[index]
-        self.eigenvectors = eigenvectors[:, index].T
+        self.eigenvectors = eigenvectors[:, index]
 
         return self.eigenvalues, self.eigenvectors
 
@@ -319,7 +327,18 @@ class PCA:
         X: np.ndarray,
     ) -> np.ndarray:
         """学習した変換行列によって特徴量ベクトルを射影する．"""
-        return np.dot(X, self.A.T)
+        return np.dot(self.A,X)
+
+    def explained_variance_ratio(self) -> np.ndarray:
+        """累積寄与率を計算する．
+        
+        出力：
+            cumulative_ratio(np.ndarray): 各主成分の累積寄与率
+        """
+        total_variance = np.sum(self.eigenvalues)
+        explained_variance = self.eigenvalues / total_variance
+        cumulative_ratio = np.cumsum(explained_variance)
+        return cumulative_ratio
     
         
 def parse_arguments():
