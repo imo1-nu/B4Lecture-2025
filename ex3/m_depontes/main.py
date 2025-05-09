@@ -88,19 +88,24 @@ class LinearRegression:
     メンバ関数：
         OLS: 最小二乗法の計算を行う関数
         fit: データへの適応を行う関数
+        predict: 予測を行う関数
+        elastic_net_coordinate_descent: Elastic Net回帰及びLasso回帰を座標降下法で解く関数
 
     属性：
         M(int): 次数
-        fc(int): カットオフ周波数．複数の場合は下限を意味する．
-        fs(int): サンプリング周波数
-        fc2(int): 上限カットオフ周波数
+        w(np.ndarray): 重み, shape = (次数)
+        path(int): データファイルのパス．
+        data(np.ndarray): データ, shape = (データ数, データの次元数)
+        model(str): モデルの種類
     """
 
     def __init__(self,M: int, path: str, model: str) -> None:
         """初期化関数.
 
         入力：
-            M: 次数
+            M(int): 次数
+            path(str): データファイルのパス
+            model(str): モデルの種類
         """
         self.M = M
         self.w = None  # 重み
@@ -108,8 +113,11 @@ class LinearRegression:
         self.data = np.array([])
         self.model = model
 
-    def OLS(self, M, data):
-        """畳み込み計算を行う関数.
+    def OLS(self):
+        """OLS計算を行う関数.
+
+        最小二乗法を用いて重みを計算する．
+        モデルを指定することで，Ridge回帰，Lasso回帰，Elastic Net回帰を行うことができる．
 
         入力：
             data(np.ndarray): 入力値, shape = (入力値,入力値に対する出力値)
@@ -118,11 +126,11 @@ class LinearRegression:
         出力：
             w: 重み
         """
-        x = data[0]  # 入力値
-        y = data[1]  # 出力値
+        x = self.data[0]  # 入力値
+        y = self.data[1]  # 出力値
 
         # 入力行列 X の構築 (バイアス項を含む)
-        X = np.vstack([x**i for i in range(M)]).T  # shape = (サンプル数, M)
+        X = np.vstack([x**i for i in range(self.M)]).T  # shape = (サンプル数, M)
         # 正規方程式を用いて重みを計算
         match self.model:
             case "normal":
@@ -186,12 +194,11 @@ class LinearRegression:
         """データを読み込み、線形回帰を行う関数.
 
         入力：
-            M(int): フィルタの次数
-            fc(int): 下側のカットオフ周波数
-            fs(int): サンプリング周波数
+            path(str): データファイルのパス
+            M(int): 次数
 
         出力：
-            filter(np.ndarray): フィルタ係数, shape = (filterValue)
+            w(np.ndarray): 重み, shape = (次数)
         """
 
         self.data = read_csv(self.path)
@@ -201,11 +208,24 @@ class LinearRegression:
         
 
     def predict(self) -> np.ndarray:
+        """予測を行う関数.
+
+        入力：
+            data(np.ndarray): 入力値, shape = (入力値,入力値に対する出力値)
+            M(int): 次元数
+
+        出力：
+            y_pred(np.ndarray): 予測値, shape = (次数)
+            data(np.ndarray): 入力値, shape = (入力値,入力値に対する出力値)
+        """
         x = self.data[0]
         X = np.vstack([x**i for i in range(self.w.shape[0])]).T
         y_pred = (X @ self.w).flatten()  # 予測値
         
         return self.data,y_pred
+    
+class PCA:
+    
         
 
 def parse_arguments():
@@ -262,38 +282,4 @@ if __name__ == "__main__":
     linearRegression.fit(args.path)
     data,pred = linearRegression.predict()
     make_scatter(data, "linearRegression", pred)
-
-
-    # # FIRフィルタのインスタンスを生成
-    # if len(args.fc) == 1:
-    #     fir = FIR(M=args.M, fc=args.fc[0], fs=args.fs)
-    # else:
-    #     fir = FIR(M=args.M, fc=args.fc[0], fc2=args.fc[1], fs=args.fs)
-
-    # # 入力信号の読み込み
-    # audio = read_audio(args.input)
-    # if audio.size == 0:
-    #     raise FileNotFoundError(f"指定されたファイルが見つかりません: {args.input}")
-
-    # # フィルタの種類に応じて処理を分岐
-    # if args.filter == "low":
-    #     filter_coeff = fir.low_path_filter()
-    #     title = "Low-Pass Filter"
-    # elif args.filter == "high":
-    #     filter_coeff = fir.high_pass_filter()
-    #     title = "High-Pass Filter"
-    # elif args.filter == "bandpass":
-    #     if len(args.fc) != 2:
-    #         raise ValueError(
-    #             "bandpassフィルタには2つのカットオフ周波数を指定してください"
-    #         )
-    #     filter_coeff = fir.band_pass_filter()
-    #     title = "Band-Pass Filter"
-    # elif args.filter == "bandstop":
-    #     if len(args.fc) != 2:
-    #         raise ValueError(
-    #             "bandstopフィルタには2つのカットオフ周波数を指定してください"
-    #         )
-    #     filter_coeff = fir.band_stop_filter()
-    #     title = "Band-Stop Filter"
 
