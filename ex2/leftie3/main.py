@@ -1,11 +1,12 @@
 """Solution to ex2 on digital filters."""
 
 import argparse
-import wave
 from pathlib import Path
+import wave
+
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-import matplotlib.pyplot as plt
 import scipy.io.wavfile as wavfile
 
 
@@ -41,7 +42,7 @@ def convolve(x: np.ndarray, h: np.ndarray) -> np.ndarray:
 
         y[i] = np.dot(x[slice_x], h[slice_h])
 
-    return y.astype(np.int16)
+    return y
 
 
 def lpf(size: int, cutoff: float, samplerate: int) -> np.ndarray:
@@ -50,7 +51,7 @@ def lpf(size: int, cutoff: float, samplerate: int) -> np.ndarray:
     Params:
         size (int): The size of the filter
         cutoff (float): The desired cutoff frequency in Hz
-        samplerate (int): The sampling rate of the relevant signal.
+        samplerate (int): The sampling rate of the relevant signal
     Returns:
         h (ndarray): Filter coefficient array
     """
@@ -58,11 +59,83 @@ def lpf(size: int, cutoff: float, samplerate: int) -> np.ndarray:
     cutoff = cutoff / samplerate
 
     # Calculate sinc filter
-    h = 2 * cutoff * np.sinc(2 * cutoff * np.arange(-(size / 2), size / 2 + 1))
+    h = sinc_lp(size, cutoff)
 
     # Windowing
+    h *= np.hamming(size)
 
     return h
+
+
+def hpf(size: int, cutoff: float, samplerate: int) -> np.ndarray:
+    """Return the coefficients of a high-pass filter.
+
+    Params:
+        size (int): The size of the filter
+        cutoff (float): The desired cutoff frequency in Hz
+        samplerate (int): The sampling rate of the relevant signal
+    Returns:
+        h (ndarray): Filter coefficient array
+    """
+    # Cutoff frequency as fraction of the sample rate for sinc equation
+    cutoff = cutoff / samplerate
+
+    # Calculate high-pass filter through spectral inversion of low-pass filter.
+    h = -sinc_lp(size, cutoff)
+    h[size // 2] += 1
+
+    # Windowing
+    h *= np.hamming(size)
+
+    return h
+
+
+def bpf(size: int, cutoff1: float, cutoff2: float, samplerate: int) -> np.ndarray:
+    """Return the coefficients of a band-pass filter.
+
+    Params:
+        size (int): The size of the filter
+        cutoff1 (float): The desired low cutoff frequency in Hz
+        cutoff2 (float): The desired high cutoff frequency in Hz
+        samplerate (int): The sampling rate of the relevant signal
+    Returns:
+        h (ndarray): Filter coefficient array
+    """
+    # Size of fundamental HP/LP filters.
+    basic_filter_size = (size + 1) // 2
+
+    h = convolve(
+        hpf(basic_filter_size, cutoff1, samplerate),
+        lpf(basic_filter_size, cutoff2, samplerate),
+    )
+
+    return h
+
+
+def bef(size: int, cutoff1: float, cutoff2: float, samplerate: int) -> np.ndarray:
+    """Return the coefficients of a band elimination filter.
+
+    Params:
+        size (int): The size of the filter
+        cutoff1 (float): The desired low cutoff frequency in Hz
+        cutoff2 (float): The desired high cutoff frequency in Hz
+        samplerate (int): The sampling rate of the relevant signal
+    Returns:
+        out (ndarray): Filter coefficient array
+    """
+    return lpf(size, cutoff1, samplerate) + hpf(size, cutoff2, samplerate)
+
+
+def sinc_lp(size: int, cutoff: float) -> np.ndarray:
+    """Return the raw coefficients for a low-pass filter based on the sinc function.
+
+    Params:
+        size (int): The size of the filter
+        cutoff (float): The desired cutoff frequency as a fraction of the sample rate.
+    Returns:
+        out (ndarray): Raw filter coefficient array
+    """
+    return 2 * cutoff * np.sinc(2 * cutoff * np.arange(-(size // 2), size // 2 + 1))
 
 
 def main(args) -> None:
@@ -85,12 +158,23 @@ def main(args) -> None:
     a = np.frombuffer(buffer, dtype=np.int16)
 
     # Calculate filter coefficients
-    h = lpf(99, 1000, samplerate)
+    match (args.filtertype):
+        case "lpf":
+            h = lpf(99, 1000, samplerate)
+        case "hpf":
+            h = hpf(99, 2000, samplerate)
+        case "bpf":
+            h = bpf(201, 1000, 4000, samplerate)
+        case "bef":
+            h = bef(99, 1000, 3000, samplerate)
+        case _:
+            raise ValueError("Invalid filter type.")
 
+    # Apply filtering
     y = convolve(a, h)
 
     # Write output signal to file
-    wavfile.write(f"{args.file[:-4]}_filtered.wav", samplerate, y)
+    wavfile.write(f"{args.file[:-4]}_filtered.wav", samplerate, y.astype(np.int16))
 
     # -----Plotting-----
 
@@ -139,7 +223,6 @@ def main(args) -> None:
     plt.ylabel("Frequency")
     f, t, Sxx = scipy.signal.spectrogram(y, samplerate)
     plt.pcolormesh(t, f, Sxx, norm="symlog")
-    print(Sxx[:1000])
 
     plt.tight_layout(h_pad=1.2)  # Padding to prevent text overlap
 
@@ -150,11 +233,17 @@ if __name__ == "__main__":
     # Parse input arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("file")
+    parser.add_argument(
+        "--filtertype",
+        default="lpf",
+        choices=["lpf", "hpf", "bpf", "bef"],
+        help="type of filtering to be applied",
+    )
     parsed_args = parser.parse_args()
 
     filepath = Path(parsed_args.file)
 
-    if filepath.is_file():
-        main(parsed_args)
-    else:
+    if not filepath.is_file():
         raise FileNotFoundError(f"{filepath} does not exist or is not a file.")
+
+    main(parsed_args)
