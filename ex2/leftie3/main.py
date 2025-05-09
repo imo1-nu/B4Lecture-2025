@@ -160,13 +160,13 @@ def main(args) -> None:
     # Calculate filter coefficients
     match (args.filtertype):
         case "lpf":
-            h = lpf(99, 1000, samplerate)
+            h = lpf(args.size, args.cutoffs[0], samplerate)
         case "hpf":
-            h = hpf(99, 2000, samplerate)
+            h = hpf(args.size, args.cutoffs[0], samplerate)
         case "bpf":
-            h = bpf(201, 1000, 4000, samplerate)
+            h = bpf(args.size, args.cutoffs[0], args.cutoffs[1], samplerate)
         case "bef":
-            h = bef(99, 1000, 3000, samplerate)
+            h = bef(args.size, args.cutoffs[0], args.cutoffs[1], samplerate)
         case _:
             raise ValueError("Invalid filter type.")
 
@@ -239,6 +239,15 @@ if __name__ == "__main__":
         choices=["lpf", "hpf", "bpf", "bef"],
         help="type of filtering to be applied",
     )
+    parser.add_argument(
+        "-c",
+        "--cutoffs",
+        nargs="*",
+        type=int,
+        default=[1000, 3000],
+        help="the cutoff frequency/ies in Hz",
+    )
+    parser.add_argument("-s", "--size", type=int, default=101, help="the filter size")
     parsed_args = parser.parse_args()
 
     filepath = Path(parsed_args.file)
