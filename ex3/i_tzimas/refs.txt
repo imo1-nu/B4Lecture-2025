@@ -1,0 +1,3 @@
+https://pythonnumericalmethods.studentorg.berkeley.edu/notebooks/chapter16.04-Least-Squares-Regression-in-Python.html
+
+https://www.youtube.com/watch?v=EnnzQ0xQ6dU
