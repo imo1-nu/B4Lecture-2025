@@ -45,10 +45,11 @@ class ElasticNet:
         Returns:
             float: コスト関数の値
         """
+        n_sample = X.shape[0]
         residual = y - X @ weights
         l2_penalty = 0.5 * self.alpha * (1 - self.l1_ratio) * np.sum(weights[1:] ** 2)
         l1_penalty = self.alpha * self.l1_ratio * np.sum(np.abs(weights[1:]))
-        return 0.5 * np.sum(residual**2) + l2_penalty + l1_penalty
+        return 1 / (2 * n_sample) * np.sum(residual**2) + l2_penalty + l1_penalty
 
     def _update_weights(
         self, X: np.ndarray, y: np.ndarray, weights: np.ndarray, normalization_factors: np.ndarray
@@ -69,7 +70,7 @@ class ElasticNet:
         weights[0] = np.sum(y - X[:, 1:] @ weights[1:]) / n_samples  # 切片項の更新
 
         for j in range(1, X.shape[1]):
-            tmp = (y - np.delete(X, j, 1) @ np.delete(weights, j)) @ X[:, j]
+            tmp = (y - np.delete(X, j, 1) @ np.delete(weights, j)) @ X[:, j] / n_samples
 
             # ソフト閾値処理
             if tmp > self.alpha * self.l1_ratio:
@@ -95,10 +96,9 @@ class ElasticNet:
 
         # 重みの初期化
         self.coef_ = np.zeros(n_features)
-        self.coef_ = np.array([-0.516, 1.542, -0.429, 0.028])
 
         # 正規化係数の計算
-        normalization_factors = np.sum(X**2, axis=0) + self.alpha * (1 - self.l1_ratio)
+        normalization_factors = np.sum(X**2, axis=0) / n_samples + self.alpha * (1 - self.l1_ratio)
         normalization_factors += 1e-8  # ゼロ除算を避けるために小さな値を加える
 
         # 座標降下法による最適化
@@ -158,22 +158,22 @@ def main():
     X = data[:, :-1]  # 特徴量
     y = data[:, -1]  # 目的変数
 
-    # 特徴量に対して多項式特徴量を生成
-    X1 = np.hstack((X, X**2, X**3))  # 2次と3次の特徴量を追加
-    model = ElasticNet(alpha=0.0, l1_ratio=0.5, max_iter=1000, tol=1e-4)  # モデルの初期化
-    model.fit(X1, y)  # モデルの訓練
-
     n_features = X.shape[1]
     if n_features == 1:
         plt.scatter(X, y)
         plt.xlabel("x")
         plt.ylabel("y")
-        x1 = np.linspace(X.min(), X.max(), 100).reshape(-1, 1)
-        X1 = np.hstack((x1, x1**2, x1**3))  # 2次と3次の特徴量を追加
-        y_pred = model.predict(X1)
+
+        X = np.hstack((X, X**2, X**3))  # 2次と3次の特徴量を追加
+        model = ElasticNet(alpha=0.0, l1_ratio=0.5, max_iter=10000, tol=1e-7)  # モデルの初期化
+        model.fit(X, y)  # モデルの訓練
+        x_vals = np.linspace(X[:, 0].min(), X[:, 0].max(), 100)
+        X_grid = np.hstack(
+            (x_vals.reshape(-1, 1), x_vals.reshape(-1, 1) ** 2, x_vals.reshape(-1, 1) ** 3)
+        )
+        y_grid = model.predict(X_grid)
+        plt.plot(x_vals, y_grid, color="red")
         equation = f"y = {model.coef_[0]:.2f} + {model.coef_[1]:.2f}x + {model.coef_[2]:.2f}x^2 + {model.coef_[3]:.2f}x^3"
-        plt.plot(x1, y_pred, color="red", label=equation)
-        plt.title("data1")
         plt.legend()
 
     elif n_features == 2:
@@ -182,10 +182,43 @@ def main():
         ax.set_xlabel("x")
         ax.set_ylabel("y")
         ax.set_zlabel("z")
+
+        X = np.hstack((X, X**2))  # 2次の特徴量を追加
+        model = ElasticNet(alpha=1.0, l1_ratio=0.5, max_iter=10000, tol=1e-7)  # モデルの初期化
+        model.fit(X, y)  # モデルの訓練
+        x1_vals = np.linspace(X[:, 0].min(), X[:, 0].max(), 50)
+        x2_vals = np.linspace(X[:, 1].min(), X[:, 1].max(), 50)
+        X1g, X2g = np.meshgrid(x1_vals, x2_vals)
+        X_grid = np.hstack(
+            (
+                X1g.reshape(-1, 1),
+                X2g.reshape(-1, 1),
+                (X1g**2).reshape(-1, 1),
+                (X2g**2).reshape(-1, 1),
+            )
+        )
+        y_grid = model.predict(X_grid).reshape(X1g.shape)
+
+        # サーフェスプロット
+        ax.plot_surface(X1g, X2g, y_grid, color="red", alpha=0.5)
+
+        # 回帰式を表示
+        equation = (
+            f"y = {model.coef_[0]:.2f} + {model.coef_[1]:.2f}x1 + {model.coef_[2]:.2f}x2 "
+            f"+ {model.coef_[3]:.2f}x1^2 + {model.coef_[4]:.2f}x2^2"
+        )
+        ax.text2D(
+            0.05,
+            0.95,
+            equation,
+            transform=ax.transAxes,
+            fontsize=12,
+            verticalalignment="top",
+            bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="white"),
+        )
     else:
         raise ValueError("2次元または3次元のデータをプロットする必要があります。")
 
-    plt.title("data2")
     plt.show()
 
 
