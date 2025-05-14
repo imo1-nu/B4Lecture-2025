@@ -1,18 +1,19 @@
 """線形回帰・主成分分析の実装.
 
-線形回帰・主成分分析を行うプログラムを実装する．
+線形回帰・主成分分析を行うプログラムを実装する.
 """
 
+import csv
 import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-import csv
+
 
 def read_csv(path: str) -> np.ndarray:
     """csvファイルを読み込む関数.
 
-    指定されたパスからcsvファイルを読み込み，numpy配列として返す．
+    指定されたパスからcsvファイルを読み込み，numpy配列として返す.
     入力：
       path(str): csvファイルのパス
     出力：
@@ -20,15 +21,18 @@ def read_csv(path: str) -> np.ndarray:
     """
     if not os.path.exists(path):
         return np.array([])
-    
+
     data = csv.reader(open(path, "r"))
     data = [row for row in data][1:]  # ヘッダーを除外
     data = [list(map(float, row)) for row in data]  # 各要素をfloatに変換
     data = np.array(data).T
-    
+
     return data
 
-def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None, pca = None) -> None:
+
+def make_scatter(
+    data: np.ndarray, title: str, pred: np.ndarray = None, pca=None
+) -> None:
     """散布図を作成する関数.
 
     入力：
@@ -39,13 +43,13 @@ def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None, pca = No
     """
     fig = plt.figure()
 
-    if pred is None :
+    if pred is None:
         # 回帰曲線を描画しない場合の分岐
         if pca is None:
             # 主成分分析を行う場合の分岐
             if data.shape[0] == 2:
-                
-                ax = fig.add_subplot(1,1,1)
+
+                ax = fig.add_subplot(1, 1, 1)
                 ax.scatter(data[0], data[1])
                 ax.set_title(title)
                 ax.set_xlabel("x")
@@ -58,7 +62,7 @@ def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None, pca = No
                 ax.set_xlabel("x")
                 ax.set_ylabel("y")
                 ax.set_zlabel("z")
-        
+
         else:
             # 主成分分析を行わない場合の分岐
             if data.shape[0] == 2:
@@ -85,8 +89,12 @@ def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None, pca = No
                 ax.set_zlabel("z")
 
                 origin = pca.means  # データの平均点
-                for vec in pca.eigenvectors[:,:3].T:
-                    line_x = np.linspace(min(data[2]), max(data[2]), 100)  # 主成分軸の範囲を調整
+                for vec in pca.eigenvectors[:, :3].T:
+                    line_x = np.linspace(
+                        min(data[2]),
+                        max(data[2]),
+                        100,
+                    )  # 主成分軸の範囲を調整
                     line_y = origin[1] + vec[1] * line_x
                     line_z = origin[2] + vec[2] * line_x
                     ax.plot(
@@ -140,12 +148,12 @@ class LinearRegression:
     属性：
         M(int): 次数
         w(np.ndarray): 重み, shape = (次数)
-        path(int): データファイルのパス．
+        path(int): データファイルのパス.
         data(np.ndarray): データ, shape = (データ数, データの次元数)
         model(str): モデルの種類
     """
 
-    def __init__(self,M: int, path: str, model: str) -> None:
+    def __init__(self, M: int, path: str, model: str) -> None:
         """初期化関数.
 
         入力：
@@ -162,8 +170,8 @@ class LinearRegression:
     def OLS(self):
         """OLS計算を行う関数.
 
-        最小二乗法を用いて重みを計算する．
-        モデルを指定することで，Ridge回帰，Lasso回帰，Elastic Net回帰を行うことができる．
+        最小二乗法を用いて重みを計算する.
+        モデルを指定することで，Ridge回帰，Lasso回帰，Elastic Net回帰を行うことができる.
 
         入力：
             data(np.ndarray): 入力値, shape = (入力値,入力値に対する出力値)
@@ -195,8 +203,10 @@ class LinearRegression:
                 l1_ratio = 0.5  # L1正則化の比率（0～1）
                 w = self.elastic_net_coordinate_descent(X, y, alpha, l1_ratio)
                 return w
-        
-    def elastic_net_coordinate_descent(self, X, y, alpha, l1_ratio=1.0, max_iter=1000, tol=1e-4):
+
+    def elastic_net_coordinate_descent(
+        self, X, y, alpha, l1_ratio=1.0, max_iter=1000, tol=1e-4
+    ):
         """Elastic Net回帰及びLasso回帰を座標降下法で解く関数.
 
         入力：
@@ -235,7 +245,6 @@ class LinearRegression:
 
         return w
 
-
     def fit(self) -> None:
         """データを読み込み、線形回帰を行う関数.
 
@@ -246,12 +255,9 @@ class LinearRegression:
         出力：
             w(np.ndarray): 重み, shape = (次数)
         """
-
         self.data = read_csv(self.path)
 
         self.w = self.OLS(self.M, self.data)
-
-        
 
     def predict(self) -> np.ndarray:
         """予測を行う関数.
@@ -267,9 +273,10 @@ class LinearRegression:
         x = self.data[0]
         X = np.vstack([x**i for i in range(self.w.shape[0])]).T
         y_pred = (X @ self.w).flatten()  # 予測値
-        
-        return self.data,y_pred
-    
+
+        return self.data, y_pred
+
+
 class PCA:
     """主成分分析の実装を行うクラス.
 
@@ -291,6 +298,13 @@ class PCA:
         self,
         n_components: int = 2,
     ):
+        """初期化関数.
+
+        入力：
+            n_components(int): 主成分の数
+        出力：
+            None
+        """
         self.n_components = n_components
         self.A = None
         self.eigenvalues = None
@@ -301,8 +315,8 @@ class PCA:
         self,
         X: np.ndarray,
         means: np.ndarray,
-    ) ->  np.ndarray:
-        """観測値ベクトルの集合およびその期待値ベクトルから変動行列を計算する関数．
+    ) -> np.ndarray:
+        """観測値ベクトルの集合およびその期待値ベクトルから変動行列を計算する関数.
 
         入力：
             X(np.ndarray): 観測値ベクトルの集合, shape = (観測値ベクトルの数, 次元数)
@@ -313,14 +327,14 @@ class PCA:
         """
         S = 0
         for i in range(len(X)):
-            S += np.outer((X[i]-means),(X[i]-means).T)
+            S += np.outer((X[i] - means), (X[i] - means).T)
         return S
 
     def compute_sorted_eigen(
         self,
         cov_matrix: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """分散共分散行列から固有値および固有ベクトルを計算し，それぞれ固有値の降順に並べて返す関数．
+        """分散共分散行列から固有値および固有ベクトルを計算し，それぞれ固有値の降順に並べて返す関数.
 
         入力：
             cov_matrix(np.ndarray): 分散共分散行列, shape = (次元数, 次元数)
@@ -339,42 +353,43 @@ class PCA:
         self,
         X: np.ndarray,
     ) -> np.ndarray:
-        """分散最大基準に基づき，変換行列を学習する関数．
+        """分散最大基準に基づき，変換行列を学習する関数.
+
         入力：
             X(np.ndarray): 観測値ベクトルの集合, shape = (観測値ベクトルの数, 次元数)
         出力：
             A(np.ndarray): 変換行列, shape = (次元数, 次元数)
         """
-
         # 特徴ベクトルの総数を取得
         n = len(X)
 
         # 特徴ベクトルの分散共分散行列を計算
         self.means = X.mean(axis=1)
-        centered_data = X - self.means[:,np.newaxis]
-        S = self.compute_S(centered_data.T, np.zeros(centered_data.shape[0]))/n
+        centered_data = X - self.means[:, np.newaxis]
+        S = self.compute_S(centered_data.T, np.zeros(centered_data.shape[0])) / n
 
         # 分散共分散行列から固有値及び固有値ベクトルを計算し，固有値の大きい順に整列
         eigenvalues, eigenvectors = self.compute_sorted_eigen(S)
 
         # 上位n_components個の固有値ベクトルを変換行列として抽出
-        self.A = eigenvectors[:self.n_components]
+        self.A = eigenvectors[: self.n_components]
         return self.A
 
     def transform(
         self,
         X: np.ndarray,
     ) -> np.ndarray:
-        """学習した変換行列によって特徴量ベクトルを射影する関数．
+        """学習した変換行列によって特徴量ベクトルを射影する関数.
+
         入力：
             X(np.ndarray): 観測値ベクトルの集合, shape = (観測値ベクトルの数, 次元数)
         出力：
             _(np.ndarray): 射影された特徴量ベクトル, shape = (観測値ベクトルの数, 次元数)
         """
-        return np.dot(self.A,X)
+        return np.dot(self.A, X)
 
     def explained_variance_ratio(self) -> np.ndarray:
-        """累積寄与率を計算する関数．
+        """累積寄与率を計算する関数.
 
         入力：
             なし
@@ -385,8 +400,8 @@ class PCA:
         explained_variance = self.eigenvalues / total_variance
         cumulative_ratio = np.cumsum(explained_variance)
         return cumulative_ratio
-    
-        
+
+
 def parse_arguments():
     """コマンドライン引数を解析する関数.
 
@@ -398,14 +413,12 @@ def parse_arguments():
     """
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="線形回帰・主成分分析の実装"
-    )
+    parser = argparse.ArgumentParser(description="線形回帰・主成分分析の実装")
     parser.add_argument(
         "--mode",
         type=str,
         required=True,
-        choices=["linear","pca"],
+        choices=["linear", "pca"],
         help="実行する処理のモードを指定 (linear: 線形回帰, pca: 主成分分析)",
     )
     parser.add_argument(
@@ -424,15 +437,14 @@ def parse_arguments():
         "--model",
         type=str,
         default="normal",
-        choices=["normal","Ridge","Lasso","Elastic"],
+        choices=["normal", "Ridge", "Lasso", "Elastic"],
         help="(線形回帰の場合)モデルを指定（標準：normal）",
     )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
-    """メイン関数.
-    """
+    """メイン関数."""
 
     args = parse_arguments()
 
@@ -441,15 +453,21 @@ if __name__ == "__main__":
         data = read_csv(args.path)
         pca.fit(data)
         if data.shape[0] == args.M:
-            make_scatter(data, f"PCA of {args.path.split('/')[-1].split('.')[0]}", pca = pca)
+            make_scatter(
+                data,
+                f"PCA of {args.path.split('/')[-1].split('.')[0]}",
+                pca=pca,
+            )
         else:
             transformed_data = pca.transform(data)
-            make_scatter(transformed_data, f"Dimension Division of {args.path.split('/')[-1].split('.')[0]}")
+            make_scatter(
+                transformed_data,
+                f"Dimension Division of {args.path.split('/')[-1].split('.')[0]}",
+            )
 
     elif args.mode == "linear":
-        linearRegression = LinearRegression(path=args.path,M=args.M,model=args.model)
+        linearRegression = LinearRegression(path=args.path, M=args.M, model=args.model)
         linearRegression.fit(args.path)
-        data,pred = linearRegression.predict()
+        data, pred = linearRegression.predict()
         make_scatter(data, "scatter")
-        make_scatter(data, "linearRegression", pred = pred)
-
+        make_scatter(data, "linearRegression", pred=pred)
