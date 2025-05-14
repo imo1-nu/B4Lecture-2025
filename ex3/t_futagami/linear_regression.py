@@ -45,11 +45,10 @@ class ElasticNet:
         Returns:
             float: コスト関数の値
         """
-        n_samples = X.shape[0]
         residual = y - X @ weights
         l2_penalty = 0.5 * self.alpha * (1 - self.l1_ratio) * np.sum(weights[1:] ** 2)
         l1_penalty = self.alpha * self.l1_ratio * np.sum(np.abs(weights[1:]))
-        return 1 / (2 * n_samples) * np.sum(residual**2) + l2_penalty + l1_penalty
+        return 0.5 * np.sum(residual**2) + l2_penalty + l1_penalty
 
     def _update_weights(
         self, X: np.ndarray, y: np.ndarray, weights: np.ndarray, normalization_factors: np.ndarray
@@ -70,15 +69,13 @@ class ElasticNet:
         weights[0] = np.sum(y - X[:, 1:] @ weights[1:]) / n_samples  # 切片項の更新
 
         for j in range(1, X.shape[1]):
-            residual = y - X @ weights  # 残差の計算
-            tmp_residual = residual + X[:, j] * weights[j]
-            tmp_dot = np.dot(tmp_residual, X[:, j]) / n_samples
+            tmp = (y - np.delete(X, j, 1) @ np.delete(weights, j)) @ X[:, j]
 
             # ソフト閾値処理
-            if tmp_dot > self.alpha * self.l1_ratio:
-                weights[j] = (tmp_dot - self.alpha * self.l1_ratio) / normalization_factors[j]
-            elif tmp_dot < -self.alpha * self.l1_ratio:
-                weights[j] = (tmp_dot + self.alpha * self.l1_ratio) / normalization_factors[j]
+            if tmp > self.alpha * self.l1_ratio:
+                weights[j] = (tmp - self.alpha * self.l1_ratio) / normalization_factors[j]
+            elif tmp < -self.alpha * self.l1_ratio:
+                weights[j] = (tmp + self.alpha * self.l1_ratio) / normalization_factors[j]
             else:
                 weights[j] = 0.0
 
@@ -98,10 +95,10 @@ class ElasticNet:
 
         # 重みの初期化
         self.coef_ = np.zeros(n_features)
-        self.coef_ = np.array([0.516, 1.542, -0.429, -0.028])
+        self.coef_ = np.array([-0.516, 1.542, -0.429, 0.028])
 
         # 正規化係数の計算
-        normalization_factors = np.sum(X**2, axis=0) / n_samples + self.alpha * (1 - self.l1_ratio)
+        normalization_factors = np.sum(X**2, axis=0) + self.alpha * (1 - self.l1_ratio)
         normalization_factors += 1e-8  # ゼロ除算を避けるために小さな値を加える
 
         # 座標降下法による最適化
