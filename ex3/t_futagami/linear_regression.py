@@ -29,7 +29,7 @@ class ElasticNet:
             X (np.ndarray): 特徴量行列
 
         Returns:
-            np.ndarray: 切片項が追加された特徴量行列
+            np.ndarray: 切片項を追加した特徴量行列
         """
         return np.hstack((np.ones((X.shape[0], 1)), X))
 
@@ -47,9 +47,9 @@ class ElasticNet:
         """
         n_samples = X.shape[0]
         residual = y - X @ weights
-        l2_penalty = self.alpha * (1 - self.l1_ratio) * np.sum(weights[1:] ** 2)
+        l2_penalty = 0.5 * self.alpha * (1 - self.l1_ratio) * np.sum(weights[1:] ** 2)
         l1_penalty = self.alpha * self.l1_ratio * np.sum(np.abs(weights[1:]))
-        return (1 / (2 * n_samples)) * np.sum(residual**2) + l2_penalty + l1_penalty
+        return 1 / (2 * n_samples) * np.sum(residual**2) + l2_penalty + l1_penalty
 
     def _update_weights(
         self, X: np.ndarray, y: np.ndarray, weights: np.ndarray, normalization_factors: np.ndarray
@@ -67,10 +67,10 @@ class ElasticNet:
             np.ndarray: 更新された重みベクトル
         """
         n_samples = X.shape[0]
-        residual = y - X @ weights  # 残差の計算
-        weights[0] = np.sum(residual) / n_samples + weights[0]  # バイアス項の更新
+        weights[0] = np.sum(y - X[:, 1:] @ weights[1:]) / n_samples  # 切片項の更新
 
         for j in range(1, X.shape[1]):
+            residual = y - X @ weights  # 残差の計算
             tmp_residual = residual + X[:, j] * weights[j]
             tmp_dot = np.dot(tmp_residual, X[:, j]) / n_samples
 
@@ -98,15 +98,18 @@ class ElasticNet:
 
         # 重みの初期化
         self.coef_ = np.zeros(n_features)
+        self.coef_ = np.array([0.516, 1.542, -0.429, -0.028])
 
         # 正規化係数の計算
         normalization_factors = np.sum(X**2, axis=0) / n_samples + self.alpha * (1 - self.l1_ratio)
+        normalization_factors += 1e-8  # ゼロ除算を避けるために小さな値を加える
 
         # 座標降下法による最適化
         prev_cost = float("inf")
         for iteration in range(self.max_iter):
+            print(f"反復回数: {iteration}, w0: {np.sum(y - X[:, 1:] @ self.coef_[1:])}")
             self.coef_ = self._update_weights(X, y, self.coef_, normalization_factors)
-
+            print(f"反復回数: {iteration}, 重み: {self.coef_}")
             # コスト関数の計算
             current_cost = self._compute_cost(X, y, self.coef_)
 
@@ -126,6 +129,7 @@ class ElasticNet:
         Returns:
             np.ndarray: 予測値
         """
+        # データ前処理
         X = self._add_intercept(X)
         return X @ self.coef_
 
@@ -159,7 +163,7 @@ def main():
 
     # 特徴量に対して多項式特徴量を生成
     X1 = np.hstack((X, X**2, X**3))  # 2次と3次の特徴量を追加
-    model = ElasticNet(alpha=1.0, l1_ratio=0.5, max_iter=1000, tol=1e-4)  # モデルの初期化
+    model = ElasticNet(alpha=0.0, l1_ratio=0.5, max_iter=1000, tol=1e-4)  # モデルの初期化
     model.fit(X1, y)  # モデルの訓練
 
     n_features = X.shape[1]
@@ -167,8 +171,8 @@ def main():
         plt.scatter(X, y)
         plt.xlabel("x")
         plt.ylabel("y")
-        x1 = np.linspace(X.min(), X.max(), 100)
-        X1 = np.hstack((x1.reshape(-1, 1), x1.reshape(-1, 1) ** 2, x1.reshape(-1, 1) ** 3))
+        x1 = np.linspace(X.min(), X.max(), 100).reshape(-1, 1)
+        X1 = np.hstack((x1, x1**2, x1**3))  # 2次と3次の特徴量を追加
         y_pred = model.predict(X1)
         equation = f"y = {model.coef_[0]:.2f} + {model.coef_[1]:.2f}x + {model.coef_[2]:.2f}x^2 + {model.coef_[3]:.2f}x^3"
         plt.plot(x1, y_pred, color="red", label=equation)
