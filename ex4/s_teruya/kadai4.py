@@ -22,13 +22,13 @@ def MGD(x: np.ndarray, mean: np.ndarray, cov: np.ndarray, rate: np.ndarray):
     """混合ガウス分布を返します。.
 
     x:
-      入力(N\*dim or N\*M*dim ...)
+      入力([N,dim] or [N,M,dim] ...)
     mean:
-      平均ベクトル(K*dim)
+      平均ベクトル([K,dim])
     cov:
-      分散共分散行列(K\*dim\*dim)
+      分散共分散行列([K,dim,dim])
     rate:
-      重み(K)
+      重み([K])
     """
     MGD_map = np.zeros(x.shape[:-1])
     for k in range(len(rate)):
