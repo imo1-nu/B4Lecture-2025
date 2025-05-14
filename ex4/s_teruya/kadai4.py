@@ -157,7 +157,6 @@ class GMM:
         )  # 分布の左端
         if self.data.shape[1] == 1:  # 一次元
             ax2.set_ylabel("GM Value")
-            # ax2.set_ylim(-0.1)
             ax2.scatter(
                 self.data,
                 np.zeros(data1.shape[0]),
