@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import csv
 
-
 def read_csv(path: str) -> np.ndarray:
     """csvファイルを読み込む関数.
 
@@ -39,8 +38,11 @@ def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None, pca = No
         None(散布図を出力)
     """
     fig = plt.figure()
+
     if pred is None :
+        # 回帰曲線を描画しない場合の分岐
         if pca is None:
+            # 主成分分析を行う場合の分岐
             if data.shape[0] == 2:
                 
                 ax = fig.add_subplot(1,1,1)
@@ -48,6 +50,7 @@ def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None, pca = No
                 ax.set_title(title)
                 ax.set_xlabel("x")
                 ax.set_ylabel("y")
+
             elif data.shape[0] == 3:
                 ax = fig.add_subplot(projection="3d")
                 ax.scatter(data[0], data[1], data[2])
@@ -57,6 +60,7 @@ def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None, pca = No
                 ax.set_zlabel("z")
         
         else:
+            # 主成分分析を行わない場合の分岐
             if data.shape[0] == 2:
                 ax = fig.add_subplot(1, 1, 1)
                 ax.scatter(data[0], data[1])
@@ -71,6 +75,7 @@ def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None, pca = No
                     line_y = origin[1] + (vec[1] / vec[0]) * (line_x - origin[0])
                     ax.plot(line_x, line_y, color="r", linestyle="--")
                 ax.legend()
+
             elif data.shape[0] == 3:
                 ax = fig.add_subplot(projection="3d")
                 ax.scatter(data[0], data[1], data[2])
@@ -92,9 +97,10 @@ def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None, pca = No
                         linestyle="--",
                         label="Principal Component",
                     )
-                # ax.legend()
+                ax.legend()
 
     else:
+        # 回帰曲線を描画する場合の分岐
         if data.shape[0] == 2:
             ax = fig.add_subplot(1, 1, 1)
             ax.scatter(data[0], data[1])
@@ -104,6 +110,7 @@ def make_scatter(data: np.ndarray, title: str, pred: np.ndarray = None, pca = No
             sorted_indices = np.argsort(data[0])
             plt.plot(data[0][sorted_indices], pred[sorted_indices], color='red')
             plt.legend(["Actual", "Predicted"])
+
         elif data.shape[0] == 3:
             ax = fig.add_subplot(projection="3d")
             ax.scatter(data[0], data[1], data[2])
@@ -264,6 +271,22 @@ class LinearRegression:
         return self.data,y_pred
     
 class PCA:
+    """主成分分析の実装を行うクラス.
+
+    メンバ関数：
+        compute_S: 観測値ベクトルの集合およびその期待値ベクトルから変動行列を計算する関数
+        compute_sorted_eigen: 分散共分散行列から固有値および固有ベクトルを計算し，それぞれ固有値の降順に並べて返す関数
+        fit: 分散最大基準に基づき，変換行列を学習する関数
+        transform: 学習した変換行列によって特徴量ベクトルを射影する関数
+        explained_variance_ratio: 累積寄与率を計算する関数
+    属性：
+        n_components(int): 主成分の数
+        A(np.ndarray): 変換行列, shape = (次元数, 次元数)
+        eigenvalues(np.ndarray): 固有値, shape = (次元数,)
+        eigenvectors(np.ndarray): 固有ベクトル, shape = (次元数, 次元数)
+        means(np.ndarray): 期待値ベクトル, shape = (次元数)
+    """
+
     def __init__(
         self,
         n_components: int = 2,
@@ -279,7 +302,14 @@ class PCA:
         X: np.ndarray,
         means: np.ndarray,
     ) ->  np.ndarray:
-        """観測値ベクトルの集合およびその期待値ベクトルから変動行列を計算し，返す．
+        """観測値ベクトルの集合およびその期待値ベクトルから変動行列を計算する関数．
+
+        入力：
+            X(np.ndarray): 観測値ベクトルの集合, shape = (観測値ベクトルの数, 次元数)
+            means(np.ndarray): 期待値ベクトル, shape = (次元数)
+
+        出力：
+            S(np.ndarray): 変動行列, shape = (次元数, 次元数)
         """
         S = 0
         for i in range(len(X)):
@@ -290,7 +320,13 @@ class PCA:
         self,
         cov_matrix: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """分散共分散行列から固有値および固有ベクトルを計算し，それぞれ固有値の降順に並べて返す．
+        """分散共分散行列から固有値および固有ベクトルを計算し，それぞれ固有値の降順に並べて返す関数．
+
+        入力：
+            cov_matrix(np.ndarray): 分散共分散行列, shape = (次元数, 次元数)
+        出力：
+            eigenvalues(np.ndarray): 固有値, shape = (次元数,)
+            eigenvectors(np.ndarray): 固有ベクトル, shape = (次元数, 次元数)
         """
         eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
         index = np.argsort(eigenvalues)[::-1]
@@ -303,10 +339,14 @@ class PCA:
         self,
         X: np.ndarray,
     ) -> np.ndarray:
-        """分散最大基準に基づき，変換行列を学習する．"""
+        """分散最大基準に基づき，変換行列を学習する関数．
+        入力：
+            X(np.ndarray): 観測値ベクトルの集合, shape = (観測値ベクトルの数, 次元数)
+        出力：
+            A(np.ndarray): 変換行列, shape = (次元数, 次元数)
+        """
 
         # 特徴ベクトルの総数を取得
-        
         n = len(X)
 
         # 特徴ベクトルの分散共分散行列を計算
@@ -319,19 +359,25 @@ class PCA:
 
         # 上位n_components個の固有値ベクトルを変換行列として抽出
         self.A = eigenvectors[:self.n_components]
-        print(self.A.shape)
         return self.A
 
     def transform(
         self,
         X: np.ndarray,
     ) -> np.ndarray:
-        """学習した変換行列によって特徴量ベクトルを射影する．"""
+        """学習した変換行列によって特徴量ベクトルを射影する関数．
+        入力：
+            X(np.ndarray): 観測値ベクトルの集合, shape = (観測値ベクトルの数, 次元数)
+        出力：
+            _(np.ndarray): 射影された特徴量ベクトル, shape = (観測値ベクトルの数, 次元数)
+        """
         return np.dot(self.A,X)
 
     def explained_variance_ratio(self) -> np.ndarray:
-        """累積寄与率を計算する．
-        
+        """累積寄与率を計算する関数．
+
+        入力：
+            なし
         出力：
             cumulative_ratio(np.ndarray): 各主成分の累積寄与率
         """
