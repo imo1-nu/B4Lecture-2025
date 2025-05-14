@@ -116,7 +116,7 @@ def make_scatter(
             ax.set_xlabel("x")
             ax.set_ylabel("y")
             sorted_indices = np.argsort(data[0])
-            plt.plot(data[0][sorted_indices], pred[sorted_indices], color='red')
+            plt.plot(data[0][sorted_indices], pred[sorted_indices], color="red")
             plt.legend(["Actual", "Predicted"])
 
         elif data.shape[0] == 3:
@@ -132,7 +132,7 @@ def make_scatter(
             y = np.linspace(min(data[1]), max(data[1]), 50)
             X, Y = np.meshgrid(x, y)
             Z = pred[0] + pred[1] * X + pred[2] * Y  # 平面の方程式
-            ax.plot_surface(X, Y, Z, color='red', alpha=0.5)
+            ax.plot_surface(X, Y, Z, color="red", alpha=0.5)
     plt.show()
 
 
