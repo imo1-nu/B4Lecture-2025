@@ -1,3 +1,11 @@
+"""
+Elastic Net回帰モジュール.
+
+機能:
+  - Elastic Net (L1/L2) 正則化回帰モデルの学習および予測.
+  - 散布図、超平面のプロット.
+"""
+
 import argparse
 
 import numpy as np
@@ -5,6 +13,17 @@ from matplotlib import pyplot as plt
 
 
 class ElasticNet:
+    """
+    Elastic Net回帰モデル.
+
+    Attributes:
+        alpha (float): 正則化パラメータ
+        l1_ratio (float): L1正則化の比率 (0 <= l1_ratio <= 1)
+        max_iter (int): 最大反復回数
+        tol (float): 収束判定の許容誤差
+        coef_ (np.ndarray): 重みベクトル
+    """
+
     def __init__(self, alpha=1.0, l1_ratio=0.5, max_iter=1000, tol=1e-4):
         """
         Elastic Net回帰モデルの初期化.
@@ -52,7 +71,11 @@ class ElasticNet:
         return 1 / (2 * n_sample) * np.sum(residual**2) + l2_penalty + l1_penalty
 
     def _update_weights(
-        self, X: np.ndarray, y: np.ndarray, weights: np.ndarray, normalization_factors: np.ndarray
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        weights: np.ndarray,
+        normalization_factors: np.ndarray,
     ) -> np.ndarray:
         """
         座標降下法を用いて重みを更新.
@@ -104,9 +127,7 @@ class ElasticNet:
         # 座標降下法による最適化
         prev_cost = float("inf")
         for iteration in range(self.max_iter):
-            print(f"反復回数: {iteration}, w0: {np.sum(y - X[:, 1:] @ self.coef_[1:])}")
             self.coef_ = self._update_weights(X, y, self.coef_, normalization_factors)
-            print(f"反復回数: {iteration}, 重み: {self.coef_}")
             # コスト関数の計算
             current_cost = self._compute_cost(X, y, self.coef_)
 
@@ -152,28 +173,41 @@ def parse_arguments() -> argparse.Namespace:
     return args
 
 
-def main():
-    args = parse_arguments()  # 引数を解析
-    data = np.genfromtxt(args.input_data, delimiter=",", skip_header=1)  # CSVファイルを読み込み
-    X = data[:, :-1]  # 特徴量
-    y = data[:, -1]  # 目的変数
+def plot_results(X, y):
+    """
+    結果をプロットする関数.
 
+    Parameters:
+        X (np.ndarray): 特徴量行列
+        y (np.ndarray): 目的変数ベクトル
+        model (ElasticNet): 訓練されたモデル
+    """
     n_features = X.shape[1]
+    model = ElasticNet(alpha=0.0, l1_ratio=0.5, max_iter=10000, tol=1e-7)  # モデルの初期化
     if n_features == 1:
         plt.scatter(X, y)
         plt.xlabel("x")
         plt.ylabel("y")
 
         X = np.hstack((X, X**2, X**3))  # 2次と3次の特徴量を追加
-        model = ElasticNet(alpha=0.0, l1_ratio=0.5, max_iter=10000, tol=1e-7)  # モデルの初期化
         model.fit(X, y)  # モデルの訓練
         x_vals = np.linspace(X[:, 0].min(), X[:, 0].max(), 100)
         X_grid = np.hstack(
-            (x_vals.reshape(-1, 1), x_vals.reshape(-1, 1) ** 2, x_vals.reshape(-1, 1) ** 3)
+            (
+                x_vals.reshape(-1, 1),
+                x_vals.reshape(-1, 1) ** 2,
+                x_vals.reshape(-1, 1) ** 3,
+            )
         )
         y_grid = model.predict(X_grid)
-        plt.plot(x_vals, y_grid, color="red")
-        equation = f"y = {model.coef_[0]:.2f} + {model.coef_[1]:.2f}x + {model.coef_[2]:.2f}x^2 + {model.coef_[3]:.2f}x^3"
+        # 回帰式を文字列にフォーマット
+        equation = (
+            f"y = {model.coef_[0]:.2f}"
+            f" + {model.coef_[1]:.2f}x"
+            f" + {model.coef_[2]:.2f}x^2"
+            f" + {model.coef_[3]:.2f}x^3"
+        )
+        plt.plot(x_vals, y_grid, color="red", label=equation)
         plt.legend()
 
     elif n_features == 2:
@@ -184,7 +218,6 @@ def main():
         ax.set_zlabel("z")
 
         X = np.hstack((X, X**2))  # 2次の特徴量を追加
-        model = ElasticNet(alpha=1.0, l1_ratio=0.5, max_iter=10000, tol=1e-7)  # モデルの初期化
         model.fit(X, y)  # モデルの訓練
         x1_vals = np.linspace(X[:, 0].min(), X[:, 0].max(), 50)
         x2_vals = np.linspace(X[:, 1].min(), X[:, 1].max(), 50)
@@ -220,6 +253,19 @@ def main():
         raise ValueError("2次元または3次元のデータをプロットする必要があります。")
 
     plt.show()
+
+
+def main():
+    """
+    メイン関数.
+
+    コマンドライン引数を解析し、Elastic Net回帰を実行.
+    """
+    args = parse_arguments()  # 引数を解析
+    data = np.genfromtxt(args.input_data, delimiter=",", skip_header=1)  # CSVファイルを読み込み
+    X = data[:, :-1]  # 特徴量
+    y = data[:, -1]  # 目的変数
+    plot_results(X, y)  # 結果をプロット
 
 
 if __name__ == "__main__":
