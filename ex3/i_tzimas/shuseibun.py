@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
 
 
 def pca(data, output_size=None, use_percent=False):
@@ -70,11 +69,32 @@ def main():
     # Plot
     plt.subplot(111, projection="3d").scatter(
         data3_std[:, 0], data3_std[:, 1], data3_std[:, 2]
-    )
+    )  # Data points
     plt.title("Data 3 Scatterplot with PCA")
-    for v in data3_pc:
-        plt.plot([0, v[0]], [0, v[1]], [0, v[2]])
-    plt.show()
+    plt.xlim(min(data3_std[:, 0]), max(data3_std[:, 0]))
+    plt.ylim(min(data3_std[:, 1]), max(data3_std[:, 1]))
+    for i, v in enumerate(data3_pc):
+        # Scaling adjusted for data3
+        if i == 1:
+            v_ext = 80 * v
+        else:
+            v_ext = 5 * v
+        plt.plot([-v_ext[0], v_ext[0]], [-v_ext[1], v_ext[1]], [-v_ext[2], v_ext[2]])
+    plt.clf()
+
+    # Data 3 compression
+    data3_pc = pca(data3, 2)
+    data3_proj = np.dot(data3, data3_pc.T)
+
+    # Plot
+    plt.scatter(
+        data3_proj[:, 0], data3_proj[:, 1], 20, "#912583", zorder=2
+    )  # Data points
+    plt.title("Data 3 Scatterplot (Compressed)")
+    plt.grid()
+    plt.savefig("ex3/i_tzimas/data3_compressed.png")
+
+    # TODO: Data 4
 
 
 if __name__ == "__main__":
