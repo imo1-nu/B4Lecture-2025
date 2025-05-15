@@ -97,9 +97,13 @@ class ElasticNet:
 
             # ソフト閾値処理
             if tmp > self.alpha * self.l1_ratio:
-                weights[j] = (tmp - self.alpha * self.l1_ratio) / normalization_factors[j]
+                weights[j] = (tmp - self.alpha * self.l1_ratio) / normalization_factors[
+                    j
+                ]
             elif tmp < -self.alpha * self.l1_ratio:
-                weights[j] = (tmp + self.alpha * self.l1_ratio) / normalization_factors[j]
+                weights[j] = (tmp + self.alpha * self.l1_ratio) / normalization_factors[
+                    j
+                ]
             else:
                 weights[j] = 0.0
 
@@ -121,7 +125,9 @@ class ElasticNet:
         self.coef_ = np.zeros(n_features)
 
         # 正規化係数の計算
-        normalization_factors = np.sum(X**2, axis=0) / n_samples + self.alpha * (1 - self.l1_ratio)
+        normalization_factors = np.sum(X**2, axis=0) / n_samples + self.alpha * (
+            1 - self.l1_ratio
+        )
         normalization_factors += 1e-8  # ゼロ除算を避けるために小さな値を加える
 
         # 座標降下法による最適化
@@ -183,7 +189,9 @@ def plot_results(X, y):
         model (ElasticNet): 訓練されたモデル
     """
     n_features = X.shape[1]
-    model = ElasticNet(alpha=0.0, l1_ratio=0.5, max_iter=10000, tol=1e-7)  # モデルの初期化
+    model = ElasticNet(
+        alpha=0.0, l1_ratio=0.5, max_iter=10000, tol=1e-7
+    )  # モデルの初期化
     if n_features == 1:
         plt.scatter(X, y)
         plt.xlabel("x")
@@ -262,7 +270,9 @@ def main():
     コマンドライン引数を解析し、Elastic Net回帰を実行.
     """
     args = parse_arguments()  # 引数を解析
-    data = np.genfromtxt(args.input_data, delimiter=",", skip_header=1)  # CSVファイルを読み込み
+    data = np.genfromtxt(
+        args.input_data, delimiter=",", skip_header=1
+    )  # CSVファイルを読み込み
     X = data[:, :-1]  # 特徴量
     y = data[:, -1]  # 目的変数
     plot_results(X, y)  # 結果をプロット
