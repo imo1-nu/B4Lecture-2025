@@ -7,6 +7,7 @@ GMM (Gaussian Mixture Model)によるクラスタリングを実行するプロ�
 import argparse
 
 import numpy as np
+from matplotlib import colors
 from matplotlib import pyplot as plt
 from scipy.stats import multivariate_normal
 
@@ -299,14 +300,14 @@ def plot_gmm_results_2D(gmm: GMM, X: np.ndarray) -> None:
     # ラベルと責任度を取得
     labels = gmm.predict(X)
 
+    fig, ax = plt.subplots()
+
     # 散布図
-    plt.figure()
-    plt.scatter(X[:, 0], X[:, 1], c=labels, cmap="viridis", alpha=0.6, s=30)
+    ax.scatter(X[:, 0], X[:, 1], c=labels, cmap="viridis", alpha=0.6, s=30)
 
     # クラスタ平均のプロット
-    plt.scatter(
-        gmm.means_[:, 0], gmm.means_[:, 1], c="red", marker="x", s=100, label="means"
-    )
+    means = gmm.means_
+    ax.scatter(means[:, 0], means[:, 1], c="red", marker="x", s=100, label="means")
 
     # 描画領域
     x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
@@ -314,20 +315,23 @@ def plot_gmm_results_2D(gmm: GMM, X: np.ndarray) -> None:
     xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100), np.linspace(y_min, y_max, 100))
     grid = np.column_stack([xx.ravel(), yy.ravel()])
 
-    # 混合ガウス分布の等高線を計算・描画
-    # 各点での混合密度を合算
+    # 混合ガウス分布の確率密度関数を計算
     pdf = np.zeros_like(xx)
     for k in range(gmm.n_components):
         rv = multivariate_normal(mean=gmm.means_[k], cov=gmm.covariances_[k])
         pdf += gmm.weights_[k] * rv.pdf(grid).reshape(xx.shape)
-    # 輪郭線のみを高さで色分けして描画
-    c = plt.contour(xx, yy, pdf, levels=10, cmap="viridis", linewidths=1.0)
-    plt.colorbar(c, label="GMM PDF")
 
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.title("data")
-    plt.legend()
+    # 等高線のプロット
+    cs = ax.contour(xx, yy, pdf, levels=10, cmap="viridis", linewidths=1.0)
+    norm = colors.Normalize(vmin=cs.cvalues.min(), vmax=cs.cvalues.max())
+    # カラーバー用の Normalize と ScalarMappable を作成
+    sm = plt.cm.ScalarMappable(cmap=cs.cmap, norm=norm)
+    sm.set_array([])  # 空の配列を設定
+    fig.colorbar(sm, ticks=cs.levels, ax=ax, label="GMM PDF")  # カラーバーを追加
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_title("data3")
+    ax.legend()
     plt.show()
 
 
@@ -364,7 +368,7 @@ def plot_log_likelihood(gmm: GMM) -> None:
     """
     plt.figure()
     plt.plot(gmm.log_likelihoods_)
-    plt.title("data")
+    plt.title("data3")
     plt.xlabel("Iteration")
     plt.ylabel("Log Likelihood")
     plt.grid()
