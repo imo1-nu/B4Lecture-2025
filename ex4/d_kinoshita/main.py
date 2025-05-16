@@ -4,11 +4,10 @@ GMM clustering with EM algorithm and visualization tools.
 This script loads 1D and 2D datasets, applies GMM clustering using the EM algorithm,
 and visualizes the clustering result with gradient coloring and log-likelihood plots.
 """
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import norm, multivariate_normal
+from scipy.stats import multivariate_normal, norm
 
 # フォントサイズを全体で統一
 plt.rcParams.update({"font.size": 12})
@@ -62,7 +61,7 @@ def gmm_em(X, K, max_iter=100, tol=1e-4, seed=0):
                     [
                         pi[k] * multivariate_normal.pdf(X, mean=mu[k], cov=sigma[k])
                         for k in range(K)
-                    ], 
+                    ],
                     axis=0,
                 )
             )
@@ -97,14 +96,15 @@ def plot_1d_result(X, mu, sigma, pi, gamma, name):
     plt.figure(figsize=(10, 4))
     plt.plot(x_grid, total_pdf, color="orange", linewidth=2.5, label="GMM (total)")
     plt.scatter(
-        X.flatten(), 
+        X.flatten(),
         np.zeros_like(X.flatten()),
         color=point_colors,
         s=30,
         alpha=0.8,
         edgecolors="k",
         linewidth=0.3,
-        label="Data"),
+        label="Data",
+    )
     plt.scatter(
         mu[:, 0], np.zeros_like(mu[:, 0]), c="red", s=100, marker="x", label="Centroids"
     )
@@ -132,7 +132,7 @@ def plot_2d_result(X, mu, sigma, gamma, name):
 
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.scatter(
-        X[:, 0], 
+        X[:, 0],
         X[:, 1],
         color=point_colors,
         s=30,
@@ -152,8 +152,8 @@ def plot_2d_result(X, mu, sigma, gamma, name):
         rv = multivariate_normal(mu[k], sigma[k])
         Z = rv.pdf(pos)
         ax.contour(
-            X_grid, 
-            Y_grid, 
+            X_grid,
+            Y_grid,
             Z,
             levels=6,
             linewidths=1.5,
@@ -222,6 +222,10 @@ def main():
     """
     Main routine for GMM clustering and visualization.
     """
+    max_iter = 100
+    tol = 1e-4
+    seed = 0
+
     datasets = [
         ("data1", pd.read_csv("data1.csv", header=None).values, 2),
         ("data2", pd.read_csv("data2.csv", header=None).values, 3),
@@ -235,7 +239,7 @@ def main():
         print(f"Processing {name} with {K} clusters...")
 
         plot_raw_data(X, name)
-        mu, sigma, pi, gamma, log_likelihoods = gmm_em(X, K)
+        mu, sigma, pi, gamma, log_likelihoods = gmm_em(X, K, max_iter=max_iter, tol=tol, seed=seed)
         plot_log_likelihood(log_likelihoods, name)
 
         if X.shape[1] == 1:
