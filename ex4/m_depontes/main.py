@@ -31,7 +31,7 @@ def read_csv(path: str) -> np.ndarray:
 
 
 def make_scatter(
-    data: np.ndarray, title: str, claster: np.ndarray = None,
+    data: np.ndarray, title: str, claster: np.ndarray = None, mean: np.ndarray = None
 ) -> None:
     """散布図を作成する関数.
 
@@ -64,6 +64,7 @@ def make_scatter(
             ax = fig.add_subplot(1, 1, 1)
             for i in range(NUMBER_OF_CLASTER):
                 ax.scatter(data[0][claster == i], 0, label=f"Claster {i}")
+            ax.scatter(mean[:, 0], 0, c="red", marker="x", s=100, label="Mean")
             ax.set_title(title)
             ax.set_xlabel("x")
             ax.set_ylabel("y")
@@ -71,12 +72,46 @@ def make_scatter(
         elif data.shape[0] == 2:
             ax = fig.add_subplot(1, 1, 1)
             for i in range(NUMBER_OF_CLASTER):
-                ax.scatter(data[0][claster == i], data[1][claster == i], label=f"Claster {i}")
+                ax.scatter(
+                    data[0][claster == i], data[1][claster == i], label=f"Claster {i}", cmap="coolwarm"
+                )
+            plt.scatter(
+                mean[:, 0], mean[:, 1], c="red", marker="x", s=100, label="means"
+            )
             ax.set_title(title)
             ax.set_xlabel("x")
             ax.set_ylabel("y")
             ax.legend()
 
+    plt.show()
+
+def plot_gmm_contour(data, gmm):
+    from scipy.stats import multivariate_normal
+    """GMMの混合分布等高線を描画（2次元データのみ）"""
+    if data.shape[0] != 2:
+        print("等高線は2次元データのみ対応しています")
+        return
+
+    x = np.linspace(np.min(data[0]), np.max(data[0]), 100)
+    y = np.linspace(np.min(data[1]), np.max(data[1]), 100)
+    xx, yy = np.meshgrid(x, y)
+    grid = np.stack([xx.ravel(), yy.ravel()]).T
+
+    # 混合分布のPDFを計算
+    pdf = np.zeros(grid.shape[0])
+    for k in range(gmm.claster):
+        rv = multivariate_normal(mean=gmm.mean[k], cov=gmm.cov[k])
+        pdf += gmm.mixture_ratio[k] * rv.pdf(grid)
+    pdf = pdf.reshape(xx.shape)
+
+    plt.figure()
+    plt.scatter(data[0], data[1], c='gray', s=10, label='data')
+    plt.contour(xx, yy, pdf, levels=10, cmap='viridis')
+    plt.scatter(gmm.mean[:, 0], gmm.mean[:, 1], c='red', marker='x', s=100, label='means')
+    plt.title("GMM Contour")
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.legend()
     plt.show()
 
 
@@ -114,11 +149,12 @@ class GMMClastering:
         self.n_dimensions = data.shape[0]
         self.claster = NUMBER_OF_CLASTER
 
-        self.mixture_ratio = [0.3, 0.3, 0.4]
+        self.mixture_ratio = np.ones(self.claster) / self.claster
         self.mean = self.data[:, np.random.choice(self.n_samples, self.claster, replace=False)].T # shape = (クラスター数, 次数)
         self.cov = np.array([np.cov(data) for _ in range(self.claster)])
 
         self.responsibility = np.zeros((self.claster, self.n_samples))  # 責任度
+        self._LogLikelihoods = [] # 対数尤度のリスト, shape = (イテレーション数, )
 
     def _GaussianModel(self, mean, cov):
         """ガウス分布の確率密度関数を計算する関数.
@@ -134,7 +170,7 @@ class GMMClastering:
         
         diff = self.data.T - mean
         exponent = -0.5 * np.sum(diff @ inv_cov * diff, axis=1)  # shape = (サンプル数,)
-        normalization = np.sqrt((2 * np.pi) ** self.n_samples * det_cov)
+        normalization = np.sqrt((2 * np.pi) ** self.n_dimensions * det_cov)
         return (1 / normalization) * np.exp(exponent)  # shape = (サンプル数,)
 
     def _LogLikelihood(self):
@@ -168,14 +204,19 @@ class GMMClastering:
         """
         L = 0
         L_new = self._LogLikelihood()
+        self._LogLikelihoods.append(L_new)
         responsibility = np.zeros((self.claster, self.n_samples))  # 責任度
-        while np.abs(L - L_new) > 1e-4:
+        for i in range(100):
             L = L_new
             responsibility = self._E_Step()
             self._M_Step(responsibility)
             L_new = self._LogLikelihood()
+            self._LogLikelihoods.append(L_new)
+            if abs(L_new - L) < 1e-3:
+                break
 
         self.responsibility = responsibility
+        self.display_log_likelihood()
 
     def _E_Step(self):
         """EMアルゴリズムのEステップを実装する関数.
@@ -194,7 +235,7 @@ class GMMClastering:
         # 責任度 (yupsilon) を計算
         yupsilon = np.zeros((self.claster, self.n_samples))  # shape = (クラスター数, サンプル数)
         for k in range(self.claster):
-            yupsilon[k] = self.mixture_ratio[k] * gaussians[k] / np.sum(np.dot(self.mixture_ratio, gaussians))  # shape = (クラスター数, サンプル数)
+            yupsilon[k] = self.mixture_ratio[k] * gaussians[k] / np.sum(self.mixture_ratio[:, np.newaxis] * gaussians, axis=0)  # shape = (クラスター数, サンプル数)
         return yupsilon
 
     def _M_Step(self, responsibility) -> None:
@@ -232,6 +273,20 @@ class GMMClastering:
     def define_claster(self, data: np.ndarray) -> int:
         return 3
 
+    def display_log_likelihood(self) -> None:
+        """対数尤度を表示する関数.
+
+        入力：
+            _logLikelihoods(List<float>): 対数尤度のリスト
+        出力：
+            None
+        """
+        print(self._LogLikelihoods)
+        plt.plot(self._LogLikelihoods)
+        plt.title("Log Likelihood")
+        plt.xlabel("Iteration")
+        plt.ylabel("Log Likelihood")
+        plt.show()
 
 def parse_arguments():
     """コマンドライン引数を解析する関数.
@@ -265,4 +320,7 @@ if __name__ == "__main__":
 
     gmm = GMMClastering(data)
     claster = gmm.clustering()
-    make_scatter(data, f"Clastering of {args.path.split('/')[-1].split('.')[0]}", claster)
+    make_scatter(data, f"Clastering of {args.path.split('/')[-1].split('.')[0]}", claster, gmm.mean)
+
+    # GMMの混合分布等高線を描画
+    plot_gmm_contour(data, gmm)
