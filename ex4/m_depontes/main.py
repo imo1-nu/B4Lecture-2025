@@ -139,15 +139,15 @@ class GMMClustering:
         responsibility(np.ndarray): 責任度, shape = (クラスター数, サンプル数)
         _logLikelihoods(List<float>): 対数尤度のリスト, shape = (イテレーション数, ) 
     """
-    def __init__(self, data: np.ndarray, tol: float, model: str = None) -> None:
+    def __init__(self, data: np.ndarray, tol: float, max_iteration: int , model: str = None) -> None:
         """初期化関数.
 
         クラスタリングの初期化を行う関数. 変数の受領及び初期化を行う.
-
         入力：
             data(np.ndarray): 入力値
             tol(float): 収束条件の閾値
             model(str): クラスター数指定モデルの種類, "AIC" or "BIC" or None
+            max_iteration(int): 最大イテレーション数
         """
         self.data = data
         self.n_samples = data.shape[1]
@@ -155,6 +155,7 @@ class GMMClustering:
         self.cluster = self._define_cluster(self.data, model)
         print(f"cluster:{self.cluster}")
         self.tol = tol
+        self.max_iteration = max_iteration
 
         self.mixture_ratio = np.ones(self.cluster) / self.cluster
         self.mean = self.data[:, np.random.choice(self.n_samples, self.cluster, replace=False)].T
@@ -207,7 +208,6 @@ class GMMClustering:
         入力：
             data(np.ndarray): 入力値, shape = (入力値,入力値に対する出力値)
             cluster(int): クラスター数
-
         出力：
             responsibility(np.ndarray): 責任度, shape = (データ数, クラスター数)
         """
@@ -215,7 +215,7 @@ class GMMClustering:
         L_new = self._logLikelihood()
         self._logLikelihoods.append(L_new)
         responsibility = np.zeros((self.cluster, self.n_samples))  # 責任度
-        for i in range(100):
+        for i in range(self.max_iteration):
             L = L_new
             responsibility = self._e_Step()
             self._m_Step(responsibility)
@@ -265,6 +265,7 @@ class GMMClustering:
             self.cov[k] = cov_k + np.eye(self.n_dimensions) * 1e-6
 
             self.mixture_ratio[k] = Nk[k] / self.n_samples
+
     def clustering(self) -> np.ndarray:
         """クラスタリングを行う関数.
 
@@ -277,9 +278,10 @@ class GMMClustering:
         self.emAlgorithm()
         cluster = np.argmax(self.responsibility, axis=0)
         return cluster
-    
+
     def _define_cluster(self, data: np.ndarray, model: str = None) -> int:
         """AICまたはBICを用いてクラスター数を決定する関数.
+
         入力：
             data(np.ndarray): 入力値, shape = (入力値,入力値に対する出力値)
             model(str): モデルの種類, "AIC" or "BIC" or None
@@ -294,7 +296,7 @@ class GMMClustering:
             for k in range(2, 11):
                 AIC.append(2 * k - 2 * np.log(np.sum(self._gaussianModel(mean, cov))))
             return np.argmin(AIC) + 2
-    
+
         # BIC
         elif model == "BIC":
             BIC = []
@@ -321,7 +323,6 @@ class GMMClustering:
 
 def parse_arguments():
     """コマンドライン引数を解析する関数.
-
     入力：
         なし
 
@@ -348,6 +349,12 @@ def parse_arguments():
         type=str,
         default=None,
         help="クラスター数指定モデルの種類, 'AIC' or 'BIC'",
+    )
+    parser.add_argument(
+        "--iter",
+        type=int,
+        default=100,
+        help="最大イテレーション数",
     )
     return parser.parse_args()
 
