@@ -4,9 +4,10 @@ GMM clustering with EM algorithm and visualization tools.
 This script loads 1D and 2D datasets, applies GMM clustering using the EM algorithm,
 and visualizes the clustering result with gradient coloring and log-likelihood plots.
 """
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal, norm
 
 # フォントサイズを全体で統一
@@ -239,7 +240,9 @@ def main():
         print(f"Processing {name} with {K} clusters...")
 
         plot_raw_data(X, name)
-        mu, sigma, pi, gamma, log_likelihoods = gmm_em(X, K, max_iter=max_iter, tol=tol, seed=seed)
+        mu, sigma, pi, gamma, log_likelihoods = gmm_em(
+            X, K, max_iter=max_iter, tol=tol, seed=seed
+        )
         plot_log_likelihood(log_likelihoods, name)
 
         if X.shape[1] == 1:
