@@ -79,9 +79,7 @@ def gmm_em(X, K, max_iter=100, tol=1e-4, seed=0):
 # 1次元データの可視化
 # ------------------------
 def plot_1d_result(X, mu, sigma, pi, gamma, name):
-    """
-    Visualize GMM result for 1D data with gradient coloring.
-    """
+    """Visualize GMM result for 1D data with gradient coloring."""
     x_grid = np.linspace(X.min() - 1, X.max() + 1, 500)
     total_pdf = np.zeros_like(x_grid)
 
@@ -124,9 +122,7 @@ def plot_1d_result(X, mu, sigma, pi, gamma, name):
 # 2次元データの可視化
 # ------------------------
 def plot_2d_result(X, mu, sigma, gamma, name):
-    """
-    Visualize GMM result for 2D data with gradient coloring and contour lines.
-    """
+    """Visualize GMM result for 2D data with gradient coloring and contour lines."""
     K = len(mu)
     base_colors = plt.cm.tab10(np.linspace(0, 1, K))
     point_colors = gamma @ base_colors[:, :3]
@@ -176,9 +172,7 @@ def plot_2d_result(X, mu, sigma, gamma, name):
 # 対数尤度のプロット
 # ------------------------
 def plot_log_likelihood(log_likelihoods, name):
-    """
-    Plot the log-likelihood over EM iterations.
-    """
+    """Plot the log-likelihood over EM iterations."""
     plt.figure(figsize=(8, 4))
     plt.plot(log_likelihoods, marker="o", linestyle="-", color="purple")
     plt.title(f"Log-Likelihood during EM iterations ({name})", fontsize=14)
@@ -194,9 +188,7 @@ def plot_log_likelihood(log_likelihoods, name):
 # 元データの散布図（クラスタリング前）
 # ------------------------
 def plot_raw_data(X, name):
-    """
-    Plot raw input data before clustering.
-    """
+    """Plot raw input data before clustering."""
     plt.figure(figsize=(8, 6))
     if X.shape[1] == 1:
         plt.scatter(
@@ -220,9 +212,7 @@ def plot_raw_data(X, name):
 # メイン処理
 # ------------------------
 def main():
-    """
-    Main routine for GMM clustering and visualization.
-    """
+    """Run GMM clustering and visualize results."""
     max_iter = 100
     tol = 1e-4
     seed = 0
