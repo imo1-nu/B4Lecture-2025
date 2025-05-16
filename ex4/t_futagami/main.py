@@ -32,8 +32,6 @@ class GMM:
         各成分の平均ベクトル μ_k
     covariances_ : np.ndarray, shape (n_components, n_features, n_features)
         各成分の共分散行列 Σ_k
-    responsibilities_ : np.ndarray, shape (n_samples, n_components)
-        サンプルごとの責任度 P(z_k|x_n)
     log_likelihoods_ : list of float
         各イテレーションの対数尤度
     """
@@ -58,7 +56,6 @@ class GMM:
         self.weights_: np.ndarray
         self.means_: np.ndarray
         self.covariances_: np.ndarray
-        self.responsibilities_: np.ndarray
         self.log_likelihoods_: list
 
     def _initialize_parameters(self, X: np.ndarray) -> None:
@@ -81,17 +78,14 @@ class GMM:
         ) + np.min(X, axis=0)
 
         # 各成分の共分散行列を単位行列で初期化
-        self.covariances_ = np.array(
-            [np.eye(n_features) for _ in range(self.n_components)]
-        )
-        # 各成分の責任度を初期化
-        self.responsibilities_ = np.zeros((X.shape[0], self.n_components))
+        self.covariances_ = np.array([np.eye(n_features) for _ in range(self.n_components)])
+
         # 対数尤度の初期化
         self.log_likelihoods_ = []
 
     def _e_step(self, X: np.ndarray) -> np.ndarray:
         """
-        Eステップ: responsibilities_ を計算して返す.
+        Eステップ: responsibilities を計算して返す.
 
         Returns
         -------
@@ -106,14 +100,12 @@ class GMM:
             cov_inv = np.linalg.inv(self.covariances_[k])
             exponent = -0.5 * np.sum(diff @ cov_inv * diff, axis=1)
             coeff = 1 / (
-                (2 * np.pi) ** (n_features / 2)
-                * np.linalg.det(self.covariances_[k]) ** 0.5
+                (2 * np.pi) ** (n_features / 2) * np.linalg.det(self.covariances_[k]) ** 0.5
             )
             responsibilities[:, k] = self.weights_[k] * coeff * np.exp(exponent)
 
         # 各サンプルの責任度を計算
         responsibilities /= responsibilities.sum(axis=1, keepdims=True)
-        self.responsibilities_ = responsibilities
         return responsibilities
 
     def _m_step(self, X: np.ndarray, responsibilities: np.ndarray) -> None:
@@ -164,8 +156,7 @@ class GMM:
             cov_inv = np.linalg.inv(self.covariances_[k])
             exponent = -0.5 * np.sum(diff @ cov_inv * diff, axis=1)
             coeff = 1 / (
-                (2 * np.pi) ** (n_features / 2)
-                * np.linalg.det(self.covariances_[k]) ** 0.5
+                (2 * np.pi) ** (n_features / 2) * np.linalg.det(self.covariances_[k]) ** 0.5
             )
             log_likelihood += self.weights_[k] * coeff * np.exp(exponent)
 
@@ -212,7 +203,7 @@ class GMM:
         if not hasattr(self, "weights_"):
             raise ValueError("Model is not fitted yet. Call 'fit' before 'predict'.")
 
-        responsibilities = self.responsibilities_  # 事前に計算された責任度を使用
+        responsibilities = self._e_step(X)
         labels = np.argmax(responsibilities, axis=1)
         return labels
 
@@ -309,9 +300,7 @@ def plot_gmm_results_2D(gmm: GMM, X: np.ndarray) -> None:
     plt.scatter(X[:, 0], X[:, 1], c=labels, cmap="viridis", alpha=0.6, s=30)
 
     # クラスタ平均のプロット
-    plt.scatter(
-        gmm.means_[:, 0], gmm.means_[:, 1], c="red", marker="x", s=100, label="means"
-    )
+    plt.scatter(gmm.means_[:, 0], gmm.means_[:, 1], c="red", marker="x", s=100, label="means")
 
     # 描画領域
     x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
