@@ -1,8 +1,26 @@
-import numpy as np
+"""Solution to part 2 of ex3 on Principal Component Analysis."""
+
 import matplotlib.pyplot as plt
+import numpy as np
 
 
-def pca(data, output_size=None, use_percent=False):
+def pca(
+    data: np.ndarray, output_size: int = None, use_percent: bool = False
+) -> np.ndarray:
+    """Calculate and return the principal components of input data.
+
+    Principal components calculated as eigenvectors of the covariate matrix. The number of vectors
+    to be returned can be specified, or alternatively the function can return the miminum size
+    needed to explain 90% of the variance in the data.
+
+    Params:
+        data (ndarray): The input data.
+        output_size (int): The number of vectors to be returned. All are returned by default.
+        use_percent (bool): If set to True, output_size is ignored and instead the minimum
+        required size is returned to explain 90% of the variance in the input data.
+    Returns:
+        pc (ndarray): Array of principal components.
+    """
     # Subtract mean for standardization
     data_std = data - np.mean(data, axis=0)
     # Covariate matrix
@@ -25,10 +43,22 @@ def pca(data, output_size=None, use_percent=False):
         size = 1
         while np.cumsum([i / np.sum(eig_val) for i in eig_val[:size]]) <= 0.9:
             size += 1
+        # Uncomment lines below to print results for data4
+        # print(
+        #     f"Explained variance: {np.cumsum([i / np.sum(eig_val) for i in eig_val[:size]])}"
+        # )
+        # print(f"No. of PC: {size}")
         return pc[:size]
 
 
-def main():
+def main() -> None:
+    """Main routine.
+
+    Apples PCA to the given input data (data1.csv-data4.csv) and presents results using matplotlib.
+
+    Params: None
+    Returns: None
+    """
     # Data 1
     data1 = np.loadtxt("ex3/data/data1.csv", skiprows=1, delimiter=",")
     data1_std = data1 - np.mean(data1, axis=0)
@@ -80,6 +110,8 @@ def main():
         else:
             v_ext = 5 * v
         plt.plot([-v_ext[0], v_ext[0]], [-v_ext[1], v_ext[1]], [-v_ext[2], v_ext[2]])
+    # savefig omitted to preserve the already saved image as it has a better viewing angle.
+    # plt.savefig("ex3/i_tzimas/data3_pca.png")
     plt.clf()
 
     # Data 3 compression
@@ -94,7 +126,9 @@ def main():
     plt.grid()
     plt.savefig("ex3/i_tzimas/data3_compressed.png")
 
-    # TODO: Data 4
+    # Data 4
+    data4 = np.loadtxt("ex3/data/data4.csv", delimiter=",")
+    _ = pca(data4, use_percent=True)
 
 
 if __name__ == "__main__":
