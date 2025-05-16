@@ -63,7 +63,7 @@ def gmm_em(X, K, max_iter=100, tol=1e-4, seed=0):
                         pi[k] * multivariate_normal.pdf(X, mean=mu[k], cov=sigma[k])
                         for k in range(K)
                     ], 
-                    axis=0
+                    axis=0,
                 )
             )
         )
@@ -97,13 +97,14 @@ def plot_1d_result(X, mu, sigma, pi, gamma, name):
     plt.figure(figsize=(10, 4))
     plt.plot(x_grid, total_pdf, color="orange", linewidth=2.5, label="GMM (total)")
     plt.scatter(
-        X.flatten(), np.zeros_like(X.flatten()),
-            color=point_colors,
-            s=30,
-            alpha=0.8,
-            edgecolors="k",
-            linewidth=0.3,
-            label="Data")
+        X.flatten(), 
+        np.zeros_like(X.flatten()),
+        color=point_colors,
+        s=30,
+        alpha=0.8,
+        edgecolors="k",
+        linewidth=0.3,
+        label="Data"),
     plt.scatter(
         mu[:, 0], np.zeros_like(mu[:, 0]), c="red", s=100, marker="x", label="Centroids"
     )
@@ -245,4 +246,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
