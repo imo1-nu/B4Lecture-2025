@@ -78,7 +78,9 @@ class GMM:
         ) + np.min(X, axis=0)
 
         # 各成分の共分散行列を単位行列で初期化
-        self.covariances_ = np.array([np.eye(n_features) for _ in range(self.n_components)])
+        self.covariances_ = np.array(
+            [np.eye(n_features) for _ in range(self.n_components)]
+        )
 
         # 対数尤度の初期化
         self.log_likelihoods_ = []
@@ -100,7 +102,8 @@ class GMM:
             cov_inv = np.linalg.inv(self.covariances_[k])
             exponent = -0.5 * np.sum(diff @ cov_inv * diff, axis=1)
             coeff = 1 / (
-                (2 * np.pi) ** (n_features / 2) * np.linalg.det(self.covariances_[k]) ** 0.5
+                (2 * np.pi) ** (n_features / 2)
+                * np.linalg.det(self.covariances_[k]) ** 0.5
             )
             responsibilities[:, k] = self.weights_[k] * coeff * np.exp(exponent)
 
@@ -156,7 +159,8 @@ class GMM:
             cov_inv = np.linalg.inv(self.covariances_[k])
             exponent = -0.5 * np.sum(diff @ cov_inv * diff, axis=1)
             coeff = 1 / (
-                (2 * np.pi) ** (n_features / 2) * np.linalg.det(self.covariances_[k]) ** 0.5
+                (2 * np.pi) ** (n_features / 2)
+                * np.linalg.det(self.covariances_[k]) ** 0.5
             )
             log_likelihood += self.weights_[k] * coeff * np.exp(exponent)
 
@@ -300,7 +304,9 @@ def plot_gmm_results_2D(gmm: GMM, X: np.ndarray) -> None:
     plt.scatter(X[:, 0], X[:, 1], c=labels, cmap="viridis", alpha=0.6, s=30)
 
     # クラスタ平均のプロット
-    plt.scatter(gmm.means_[:, 0], gmm.means_[:, 1], c="red", marker="x", s=100, label="means")
+    plt.scatter(
+        gmm.means_[:, 0], gmm.means_[:, 1], c="red", marker="x", s=100, label="means"
+    )
 
     # 描画領域
     x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
