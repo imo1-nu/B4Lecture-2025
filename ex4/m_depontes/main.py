@@ -153,8 +153,9 @@ class GMMClustering:
         responsibility(np.ndarray): 責任度, shape = (クラスター数, サンプル数)
         _logLikelihoods(List<float>): 対数尤度のリスト, shape = (イテレーション数, )
     """
+
     def __init__(
-            self, data: np.ndarray, tol: float, max_iteration: int , model: str = None
+        self, data: np.ndarray, tol: float, max_iteration: int , model: str = None
     ) -> None:
         """初期化関数.
 
@@ -214,10 +215,9 @@ class GMMClustering:
             (self.cluster, self.n_samples)
         )  # shape = (クラスター数, サンプル数)
         for k in range(self.cluster):
-            likelihood[k] = (
-                self.mixture_ratio[k]
-                * self._gaussianModel(self.mean[k], self.cov[k])
-            )  # shape = (クラスター数, サンプル数)
+            likelihood[k] = self.mixture_ratio[k] * self._gaussianModel(
+                self.mean[k], self.cov[k]
+            ) # shape = (クラスター数, サンプル数)
         total_likelihood = np.sum(likelihood, axis=0)  # shape = (サンプル数,)
         # 対数尤度を計算
         L = np.sum(np.log(total_likelihood + 1e-10))
@@ -358,6 +358,7 @@ class GMMClustering:
 
 def parse_arguments():
     """コマンドライン引数を解析する関数.
+
     入力：
         なし
 
@@ -415,5 +416,5 @@ if __name__ == "__main__":
         data,
         f"Clustering of {args.path.split('/')[-1].split('.')[0]}",
         cluster,
-        gmm.mean
+        gmm.mean,
     )
