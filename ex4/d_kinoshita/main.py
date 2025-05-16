@@ -56,10 +56,17 @@ def gmm_em(X, K, max_iter=100, tol=1e-4, seed=0):
             X_centered = X - mu[k]
             sigma[k] = (gamma[:, k][:, np.newaxis] * X_centered).T @ X_centered / Nk[k]
 
-        ll = np.sum(np.log(np.sum([
-            pi[k] * multivariate_normal.pdf(X, mean=mu[k], cov=sigma[k])
-            for k in range(K)
-        ], axis=0)))
+        ll = np.sum(
+            np.log(
+                np.sum(
+                    [
+                        pi[k] * multivariate_normal.pdf(X, mean=mu[k], cov=sigma[k])
+                        for k in range(K)
+                    ], 
+                    axis=0
+                )
+            )
+        )
         log_likelihoods.append(ll)
 
         if iteration > 0 and np.abs(log_likelihoods[-1] - log_likelihoods[-2]) < tol:
@@ -79,7 +86,9 @@ def plot_1d_result(X, mu, sigma, pi, gamma, name):
     total_pdf = np.zeros_like(x_grid)
 
     for k in range(len(mu)):
-        total_pdf += pi[k] * norm.pdf(x_grid, loc=mu[k, 0], scale=np.sqrt(sigma[k][0, 0]))
+        total_pdf += pi[k] * norm.pdf(
+            x_grid, loc=mu[k, 0], scale=np.sqrt(sigma[k][0, 0])
+        )
 
     K = gamma.shape[1]
     base_colors = plt.cm.tab10(np.linspace(0, 1, K))
@@ -87,14 +96,17 @@ def plot_1d_result(X, mu, sigma, pi, gamma, name):
 
     plt.figure(figsize=(10, 4))
     plt.plot(x_grid, total_pdf, color="orange", linewidth=2.5, label="GMM (total)")
-    plt.scatter(X.flatten(), np.zeros_like(X.flatten()),
-                color=point_colors,
-                s=30,
-                alpha=0.8,
-                edgecolors="k",
-                linewidth=0.3,
-                label="Data")
-    plt.scatter(mu[:, 0], np.zeros_like(mu[:, 0]), c="red", s=100, marker="x", label="Centroids")
+    plt.scatter(
+        X.flatten(), np.zeros_like(X.flatten()),
+            color=point_colors,
+            s=30,
+            alpha=0.8,
+            edgecolors="k",
+            linewidth=0.3,
+            label="Data")
+    plt.scatter(
+        mu[:, 0], np.zeros_like(mu[:, 0]), c="red", s=100, marker="x", label="Centroids"
+    )
     plt.title(f"GMM Result ({name})", fontsize=14)
     plt.xlabel("x", fontsize=12)
     plt.ylabel("Probability Density", fontsize=12)
@@ -119,13 +131,14 @@ def plot_2d_result(X, mu, sigma, gamma, name):
 
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.scatter(
-        X[:, 0], X[:, 1],
+        X[:, 0], 
+        X[:, 1],
         color=point_colors,
         s=30,
         alpha=0.8,
         edgecolors="k",
         linewidth=0.3,
-        label="Data"
+        label="Data",
     )
     ax.scatter(mu[:, 0], mu[:, 1], c="black", s=100, marker="x", label="Centroids")
 
@@ -138,11 +151,13 @@ def plot_2d_result(X, mu, sigma, gamma, name):
         rv = multivariate_normal(mu[k], sigma[k])
         Z = rv.pdf(pos)
         ax.contour(
-            X_grid, Y_grid, Z,
+            X_grid, 
+            Y_grid, 
+            Z,
             levels=6,
             linewidths=1.5,
             colors=[base_colors[k][:3]],
-            alpha=0.6
+            alpha=0.6,
         )
 
     ax.set_title(f"GMM Result ({name})", fontsize=14)
@@ -182,7 +197,9 @@ def plot_raw_data(X, name):
     """
     plt.figure(figsize=(8, 6))
     if X.shape[1] == 1:
-        plt.scatter(X[:, 0], np.zeros_like(X[:, 0]), c="blue", s=30, alpha=0.7, label="Raw data")
+        plt.scatter(
+            X[:, 0], np.zeros_like(X[:, 0]), c="blue", s=30, alpha=0.7, label="Raw data"
+        )
         plt.ylabel("Y")
         plt.ylim(-0.05, 0.1)
     else:
@@ -207,7 +224,7 @@ def main():
     datasets = [
         ("data1", pd.read_csv("data1.csv", header=None).values, 2),
         ("data2", pd.read_csv("data2.csv", header=None).values, 3),
-        ("data3", pd.read_csv("data3.csv", header=None).values, 4)
+        ("data3", pd.read_csv("data3.csv", header=None).values, 4),
     ]
 
     for name, X, K in datasets:
@@ -228,3 +245,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
