@@ -60,21 +60,51 @@ def make_scatter(
             ax.set_ylabel("y")
     else:
         # クラスタリング結果を描画する場合の分岐
+        from scipy.stats import multivariate_normal
         if data.shape[0] == 1:
             ax = fig.add_subplot(1, 1, 1)
             for i in range(NUMBER_OF_CLASTER):
-                ax.scatter(data[0][claster == i], 0, label=f"Claster {i}")
-            ax.scatter(mean[:, 0], 0, c="red", marker="x", s=100, label="Mean")
+                x = data[0][claster == i]
+                y = np.zeros_like(x)
+                ax.scatter(x, y, label=f"Claster {i}")
+
+            # 確率密度関数
+            x_min, x_max = np.min(data[0]), np.max(data[0])
+            xx = np.linspace(x_min, x_max, 200).reshape(-1, 1)
+            pdf = np.zeros(xx.shape[0])
+            for k in range(NUMBER_OF_CLASTER):
+                rv = multivariate_normal(mean=gmm.mean[k], cov=gmm.cov[k])
+                pdf += gmm.mixture_ratio[k] * rv.pdf(xx)
+            plt.plot(xx.ravel(), pdf, color="black", linewidth=1, label="GMM PDF")
+
+            ax.scatter(
+                mean[:, 0], [0 for _ in range(len(mean))], c="red", marker="x", s=100, label="Mean"
+            )
             ax.set_title(title)
             ax.set_xlabel("x")
             ax.set_ylabel("y")
             ax.legend()
         elif data.shape[0] == 2:
             ax = fig.add_subplot(1, 1, 1)
+            x = data[0][claster == i]
+            y = data[1][claster == i]
             for i in range(NUMBER_OF_CLASTER):
                 ax.scatter(
-                    data[0][claster == i], data[1][claster == i], label=f"Claster {i}", cmap="coolwarm"
+                    x, y, label=f"Claster {i}", cmap="coolwarm"
                 )
+
+            # 確率密度関数
+            x = np.linspace(np.min(data[0]), np.max(data[0]), 100)
+            y = np.linspace(np.min(data[1]), np.max(data[1]), 100)
+            xx, yy = np.meshgrid(x, y)
+            grid = np.stack([xx.ravel(), yy.ravel()]).T
+            pdf = np.zeros(grid.shape[0])
+            for k in range(NUMBER_OF_CLASTER):
+                rv = multivariate_normal(mean=gmm.mean[k], cov=gmm.cov[k])
+                pdf += gmm.mixture_ratio[k] * rv.pdf(grid)
+            pdf = pdf.reshape(xx.shape)
+            ax.contour(xx, yy, pdf, levels=10, cmap='viridis')
+
             plt.scatter(
                 mean[:, 0], mean[:, 1], c="red", marker="x", s=100, label="means"
             )
@@ -83,35 +113,7 @@ def make_scatter(
             ax.set_ylabel("y")
             ax.legend()
 
-    plt.show()
 
-def plot_gmm_contour(data, gmm):
-    from scipy.stats import multivariate_normal
-    """GMMの混合分布等高線を描画（2次元データのみ）"""
-    if data.shape[0] != 2:
-        print("等高線は2次元データのみ対応しています")
-        return
-
-    x = np.linspace(np.min(data[0]), np.max(data[0]), 100)
-    y = np.linspace(np.min(data[1]), np.max(data[1]), 100)
-    xx, yy = np.meshgrid(x, y)
-    grid = np.stack([xx.ravel(), yy.ravel()]).T
-
-    # 混合分布のPDFを計算
-    pdf = np.zeros(grid.shape[0])
-    for k in range(gmm.claster):
-        rv = multivariate_normal(mean=gmm.mean[k], cov=gmm.cov[k])
-        pdf += gmm.mixture_ratio[k] * rv.pdf(grid)
-    pdf = pdf.reshape(xx.shape)
-
-    plt.figure()
-    plt.scatter(data[0], data[1], c='gray', s=10, label='data')
-    plt.contour(xx, yy, pdf, levels=10, cmap='viridis')
-    plt.scatter(gmm.mean[:, 0], gmm.mean[:, 1], c='red', marker='x', s=100, label='means')
-    plt.title("GMM Contour")
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.legend()
     plt.show()
 
 
@@ -134,7 +136,7 @@ class GMMClastering:
         mean(np.ndarray): 平均, shape = (次数)
         cov(np.ndarray): 共分散行列, shape = (次数, 次数) 
     """
-    def __init__(self, data: np.ndarray) -> None:
+    def __init__(self, data: np.ndarray, tol: float) -> None:
         """初期化関数.
 
         クラスタリングの初期化を行う関数. 変数の受領及び初期化を行う.
@@ -148,10 +150,13 @@ class GMMClastering:
         self.n_samples = data.shape[1]
         self.n_dimensions = data.shape[0]
         self.claster = NUMBER_OF_CLASTER
+        self.tol = tol
 
         self.mixture_ratio = np.ones(self.claster) / self.claster
         self.mean = self.data[:, np.random.choice(self.n_samples, self.claster, replace=False)].T # shape = (クラスター数, 次数)
-        self.cov = np.array([np.cov(data) for _ in range(self.claster)])
+        self.cov = np.array(
+            [np.eye(self.n_dimensions) for _ in range(self.claster)]
+        )
 
         self.responsibility = np.zeros((self.claster, self.n_samples))  # 責任度
         self._LogLikelihoods = [] # 対数尤度のリスト, shape = (イテレーション数, )
@@ -184,7 +189,7 @@ class GMMClastering:
             L(float): 対数尤度
         """
         # ガウス分布の確率密度関数を計算
-        likelihood = np.zeros((self.claster, self.data.shape[1]))  # shape = (クラスター数, サンプル数)
+        likelihood = np.zeros((self.claster, self.n_samples))  # shape = (クラスター数, サンプル数)
         for k in range(self.claster):
             likelihood[k] = self.mixture_ratio[k] * self._GaussianModel(self.mean[k], self.cov[k])  # shape = (クラスター数, サンプル数)
         total_likelihood = np.sum(likelihood, axis=0)  # shape = (サンプル数,)
@@ -269,9 +274,6 @@ class GMMClastering:
         self.EM_Algorithm()
         claster = np.argmax(self.responsibility, axis=0)
         return claster
-    
-    def define_claster(self, data: np.ndarray) -> int:
-        return 3
 
     def display_log_likelihood(self) -> None:
         """対数尤度を表示する関数.
@@ -281,7 +283,6 @@ class GMMClastering:
         出力：
             None
         """
-        print(self._LogLikelihoods)
         plt.plot(self._LogLikelihoods)
         plt.title("Log Likelihood")
         plt.xlabel("Iteration")
@@ -306,6 +307,12 @@ def parse_arguments():
         required=True,
         help="データのパス",
     )
+    parser.add_argument(
+        "--tol",
+        type=float,
+        default=1e-3,
+        help="収束条件の閾値",
+    )
     return parser.parse_args()
 
 
@@ -318,9 +325,6 @@ if __name__ == "__main__":
     data = read_csv(args.path)
     make_scatter(data, f"Scatter of {args.path.split('/')[-1].split('.')[0]}")
 
-    gmm = GMMClastering(data)
+    gmm = GMMClastering(data, args.tol)
     claster = gmm.clustering()
     make_scatter(data, f"Clastering of {args.path.split('/')[-1].split('.')[0]}", claster, gmm.mean)
-
-    # GMMの混合分布等高線を描画
-    plot_gmm_contour(data, gmm)
