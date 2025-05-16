@@ -67,7 +67,7 @@ def plot_1d_result(X, mu, sigma, pi, gamma, name):
                 alpha=0.8,
                 edgecolors='k',
                 linewidth=0.3,
-                label='Data (colored by γ)')
+                label='Data')
 
     # 重心を赤の×印でプロット
     plt.scatter(mu[:, 0], np.zeros_like(mu[:, 0]), c='red', s=100, marker='x', label='Centroids')
@@ -104,7 +104,7 @@ def plot_2d_result(X, mu, sigma, gamma, name):
         alpha=0.8,
         edgecolors='k',
         linewidth=0.3,
-        label='Data (colored by γ)'
+        label='Data'
     )
 
     # 重心を表示
