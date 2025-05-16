@@ -9,6 +9,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def read_csv(path: str) -> np.ndarray:
     """csvファイルを読み込む関数.
 
@@ -59,6 +60,7 @@ def make_scatter(
     else:
         # クラスタリング結果を描画する場合の分岐
         from scipy.stats import multivariate_normal
+
         if data.shape[0] == 1:
             ax = fig.add_subplot(1, 1, 1)
             for i in range(gmm.cluster):
@@ -76,7 +78,12 @@ def make_scatter(
             plt.plot(xx.ravel(), pdf, color="black", linewidth=1, label="GMM PDF")
 
             ax.scatter(
-                mean[:, 0], [0 for _ in range(len(mean))], c="red", marker="x", s=100, label="Mean"
+                mean[:, 0],
+                [0 for _ in range(len(mean))],
+                c="red",
+                marker="x",
+                s=100,
+                label="Mean",
             )
             ax.set_title(title)
             ax.set_xlabel("x")
@@ -88,7 +95,10 @@ def make_scatter(
             y = data[1]
             for i in range(gmm.cluster):
                 ax.scatter(
-                    x[cluster == i], y[cluster == i], label=f"Cluster {i}", cmap="coolwarm"
+                    x[cluster == i],
+                    y[cluster == i],
+                    label=f"Cluster {i}",
+                    cmap="coolwarm",
                 )
 
             # 確率密度関数
@@ -101,16 +111,20 @@ def make_scatter(
                 rv = multivariate_normal(mean=gmm.mean[k], cov=gmm.cov[k])
                 pdf += gmm.mixture_ratio[k] * rv.pdf(grid)
             pdf = pdf.reshape(xx.shape)
-            ax.contour(xx, yy, pdf, levels=10, cmap='viridis')
+            ax.contour(xx, yy, pdf, levels=10, cmap="viridis")
 
             plt.scatter(
-                mean[:, 0], mean[:, 1], c="red", marker="x", s=100, label="means"
+                mean[:, 0],
+                mean[:, 1],
+                c="red",
+                marker="x",
+                s=100,
+                label="Mean",
             )
             ax.set_title(title)
             ax.set_xlabel("x")
             ax.set_ylabel("y")
             ax.legend()
-
 
     plt.show()
 
@@ -137,9 +151,11 @@ class GMMClustering:
         mean(np.ndarray): 平均, shape = (クラスター数, 次数)
         cov(np.ndarray): 共分散行列, shape = (クラスター数, 次数, 次数)
         responsibility(np.ndarray): 責任度, shape = (クラスター数, サンプル数)
-        _logLikelihoods(List<float>): 対数尤度のリスト, shape = (イテレーション数, ) 
+        _logLikelihoods(List<float>): 対数尤度のリスト, shape = (イテレーション数, )
     """
-    def __init__(self, data: np.ndarray, tol: float, max_iteration: int , model: str = None) -> None:
+    def __init__(
+            self, data: np.ndarray, tol: float, max_iteration: int , model: str = None
+    ) -> None:
         """初期化関数.
 
         クラスタリングの初期化を行う関数. 変数の受領及び初期化を行う.
@@ -158,10 +174,10 @@ class GMMClustering:
         self.max_iteration = max_iteration
 
         self.mixture_ratio = np.ones(self.cluster) / self.cluster
-        self.mean = self.data[:, np.random.choice(self.n_samples, self.cluster, replace=False)].T
-        self.cov = np.array(
-            [np.eye(self.n_dimensions) for _ in range(self.cluster)]
-        )
+        self.mean = self.data[
+            :, np.random.choice(self.n_samples, self.cluster, replace=False)
+        ].T
+        self.cov = np.array([np.eye(self.n_dimensions) for _ in range(self.cluster)])
 
         self.responsibility = np.zeros((self.cluster, self.n_samples))
         self._logLikelihoods = []
@@ -177,7 +193,7 @@ class GMMClustering:
         """
         inv_cov = np.linalg.pinv(cov)  # shape = (次元数, 次元数)
         det_cov = np.linalg.det(cov)
-        
+
         diff = self.data.T - mean
         exponent = -0.5 * np.sum(diff @ inv_cov * diff, axis=1)  # shape = (サンプル数,)
         normalization = np.sqrt((2 * np.pi) ** self.n_dimensions * det_cov)
@@ -194,9 +210,14 @@ class GMMClustering:
             L(float): 対数尤度
         """
         # ガウス分布の確率密度関数を計算
-        likelihood = np.zeros((self.cluster, self.n_samples))  # shape = (クラスター数, サンプル数)
+        likelihood = np.zeros(
+            (self.cluster, self.n_samples)
+        )  # shape = (クラスター数, サンプル数)
         for k in range(self.cluster):
-            likelihood[k] = self.mixture_ratio[k] * self._gaussianModel(self.mean[k], self.cov[k])  # shape = (クラスター数, サンプル数)
+            likelihood[k] = (
+                self.mixture_ratio[k]
+                * self._gaussianModel(self.mean[k], self.cov[k])
+            )  # shape = (クラスター数, サンプル数)
         total_likelihood = np.sum(likelihood, axis=0)  # shape = (サンプル数,)
         # 対数尤度を計算
         L = np.sum(np.log(total_likelihood + 1e-10))
@@ -237,13 +258,23 @@ class GMMClustering:
             yupsilon(np.ndarray): 責任度, shape = (データ数, クラスター数)
         """
         # ガウス分布の確率密度関数を計算
-        gaussians = np.zeros((self.cluster, self.data.shape[1]))  # shape = (クラスター数, サンプル数)
+        gaussians = np.zeros(
+            (self.cluster, self.data.shape[1])
+        )  # shape = (クラスター数, サンプル数)
         for k in range(self.cluster):
-            gaussians[k] = self._gaussianModel(self.mean[k], self.cov[k])  # shape = (クラスター数, サンプル数)
+            gaussians[k] = self._gaussianModel(
+                self.mean[k], self.cov[k]
+            )  # shape = (クラスター数, サンプル数)
         # 責任度 (yupsilon) を計算
-        yupsilon = np.zeros((self.cluster, self.n_samples))  # shape = (クラスター数, サンプル数)
+        yupsilon = np.zeros(
+            (self.cluster, self.n_samples)
+        )  # shape = (クラスター数, サンプル数)
         for k in range(self.cluster):
-            yupsilon[k] = self.mixture_ratio[k] * gaussians[k] / np.sum(self.mixture_ratio[:, np.newaxis] * gaussians, axis=0)  # shape = (クラスター数, サンプル数)
+            yupsilon[k] = (
+                self.mixture_ratio[k]
+                * gaussians[k]
+                / np.sum(self.mixture_ratio[:, np.newaxis] * gaussians, axis=0)
+            )  # shape = (クラスター数, サンプル数)
         return yupsilon
 
     def _m_Step(self, responsibility) -> None:
@@ -301,7 +332,10 @@ class GMMClustering:
         elif model == "BIC":
             BIC = []
             for k in range(2, 11):
-                BIC.append(k * np.log(self.n_samples) - 2 * np.log(np.sum(self._gaussianModel(mean, cov))))
+                BIC.append(
+                    k * np.log(self.n_samples)
+                    - 2 * np.log(np.sum(self._gaussianModel(mean, cov)))
+                )
             return np.argmin(BIC) + 2
 
         else:
@@ -320,6 +354,7 @@ class GMMClustering:
         plt.xlabel("Iteration")
         plt.ylabel("Log Likelihood")
         plt.show()
+
 
 def parse_arguments():
     """コマンドライン引数を解析する関数.
@@ -376,4 +411,9 @@ if __name__ == "__main__":
 
     # クラスタリング結果の表示
     gmm.display_log_likelihood()
-    make_scatter(data, f"Clustering of {args.path.split('/')[-1].split('.')[0]}", cluster, gmm.mean)
+    make_scatter(
+        data,
+        f"Clustering of {args.path.split('/')[-1].split('.')[0]}",
+        cluster,
+        gmm.mean
+    )
