@@ -1,8 +1,8 @@
-"""Solution to ex2 on digital filters."""
+"""A solution to ex2 on digital filters."""
 
 import argparse
-from pathlib import Path
 import wave
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
