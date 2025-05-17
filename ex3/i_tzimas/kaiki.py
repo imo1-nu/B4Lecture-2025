@@ -5,7 +5,11 @@ import numpy as np
 
 
 def ols(
-    data: np.ndarray, order: int, reg: str = None, alpha: float = 1.0, l1: float = 0.5
+    data: np.ndarray,
+    order: int,
+    reg: str = None,
+    alpha: float = 1.0,
+    l1_ratio: float = 0.5,
 ) -> np.ndarray:
     """Ordinary least squares implementation with regularization options.
 
@@ -87,8 +91,8 @@ def ols(
                     # Update weight according to soft threshold
 
                     # L1 and L2 terms
-                    l1 = alpha * l1
-                    l2 = alpha * (1 - l1)
+                    l1 = alpha * l1_ratio
+                    l2 = alpha * (1 - l1_ratio)
                     den = np.sum(x_i**2) + l2
                     if r < -l1:
                         w[i] = (r + l1) / den
@@ -139,7 +143,7 @@ def main() -> None:
 
     # Data 2
     data2 = np.loadtxt("ex3/data/data2.csv", skiprows=1, delimiter=",")
-    w2 = ols(data2, order=3, reg="elastic_net", alpha=0.05, l1=0.5)
+    w2 = ols(data2, order=3, reg="elastic_net", alpha=0.05, l1_ratio=0.5)
 
     # Plots
 
