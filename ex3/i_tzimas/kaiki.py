@@ -13,6 +13,9 @@ def ols(
 ) -> np.ndarray:
     """Ordinary least squares implementation with regularization options.
 
+    Computes simple OLS regression coefficients unless a regularization option is set. If order is
+    set, exponential values are computed and added as columns before fitting the data.
+
     Params:
         data (ndarray): The input data.
         order (int): Order of the output polynomial.
@@ -112,7 +115,7 @@ def ols(
 
 
 def main() -> None:
-    """Main routine.
+    """Execute main routine.
 
     Performs linear regression on input data (data1.csv-data3.csv) and presents the results using
     matplotlib.

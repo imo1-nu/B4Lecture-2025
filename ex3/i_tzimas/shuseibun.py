@@ -52,7 +52,7 @@ def pca(
 
 
 def main() -> None:
-    """Main routine.
+    """Execute main routine.
 
     Apples PCA to the given input data (data1.csv-data4.csv) and presents results using matplotlib.
 
