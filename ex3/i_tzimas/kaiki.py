@@ -23,6 +23,7 @@ def ols(
         alpha (float): Regularization parameter.
         l1 (float): l1 ratio to be used in Elastic Net regression.
     Returns:
+        w (ndarray): Array of regression coefficients.
     """
     y = data[:, -1][:, np.newaxis]
     x = data[:, :-1]
