@@ -139,7 +139,7 @@ def sinc_lp(size: int, cutoff: float) -> np.ndarray:
 
 
 def main(args) -> None:
-    """Main routine.
+    """Execute main routine.
 
     Params:
         args (Namespace): Command line arguments.
