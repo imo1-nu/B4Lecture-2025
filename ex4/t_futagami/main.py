@@ -27,13 +27,13 @@ class GMM:
 
     Attributes
     ----------
-    weights_ : np.ndarray, shape (n_components,)
+    _weights : np.ndarray, shape (n_components,)
         混合係数 π_k
-    means_ : np.ndarray, shape (n_components, n_features)
+    _means : np.ndarray, shape (n_components, n_features)
         各成分の平均ベクトル μ_k
-    covariances_ : np.ndarray, shape (n_components, n_features, n_features)
+    _covariances : np.ndarray, shape (n_components, n_features, n_features)
         各成分の共分散行列 Σ_k
-    log_likelihoods_ : list of float
+    _log_likelihoods : list of float
         各イテレーションの対数尤度
     """
 
@@ -54,10 +54,10 @@ class GMM:
         self.max_iter = max_iter
         self.tol = tol
         # 以下は fit の中で初期化される
-        self.weights_: np.ndarray
-        self.means_: np.ndarray
-        self.covariances_: np.ndarray
-        self.log_likelihoods_: list
+        self._weights: np.ndarray
+        self._means: np.ndarray
+        self._covariances: np.ndarray
+        self._log_likelihoods: list
 
     def _initialize_parameters(self, X: np.ndarray) -> None:
         """
@@ -71,20 +71,20 @@ class GMM:
             入力データ
         """
         n_features = X.shape[1]
-        self.weights_ = np.ones(self.n_components) / self.n_components
+        self._weights = np.ones(self.n_components) / self.n_components
 
         # 各成分の平均をデータの範囲に基づいて初期化
-        self.means_ = np.random.rand(self.n_components, n_features) * (
+        self._means = np.random.rand(self.n_components, n_features) * (
             np.max(X, axis=0) - np.min(X, axis=0)
         ) + np.min(X, axis=0)
 
         # 各成分の共分散行列を単位行列で初期化
-        self.covariances_ = np.array(
+        self._covariances = np.array(
             [np.eye(n_features) for _ in range(self.n_components)]
         )
 
         # 対数尤度の初期化
-        self.log_likelihoods_ = []
+        self._log_likelihoods = []
 
     def _e_step(self, X: np.ndarray) -> np.ndarray:
         """
@@ -99,14 +99,14 @@ class GMM:
 
         # 各成分の確率密度関数を計算
         for k in range(self.n_components):
-            diff = X - self.means_[k]
-            cov_inv = np.linalg.inv(self.covariances_[k])
+            diff = X - self._means[k]
+            cov_inv = np.linalg.inv(self._covariances[k])
             exponent = -0.5 * np.sum(diff @ cov_inv * diff, axis=1)
             coeff = 1 / (
                 (2 * np.pi) ** (n_features / 2)
-                * np.linalg.det(self.covariances_[k]) ** 0.5
+                * np.linalg.det(self._covariances[k]) ** 0.5
             )
-            responsibilities[:, k] = self.weights_[k] * coeff * np.exp(exponent)
+            responsibilities[:, k] = self._weights[k] * coeff * np.exp(exponent)
 
         # 各サンプルの責任度を計算
         responsibilities /= responsibilities.sum(axis=1, keepdims=True)
@@ -114,7 +114,7 @@ class GMM:
 
     def _m_step(self, X: np.ndarray, responsibilities: np.ndarray) -> None:
         """
-        Mステップ: weights_, means_, covariances_ を更新する.
+        Mステップ: _weights, _means, _covariances を更新する.
 
         Parameters
         ----------
@@ -123,18 +123,18 @@ class GMM:
         responsibilities : np.ndarray, shape (n_samples, n_components)
             各サンプルの責任度
         """
-        n_samples, n_features = X.shape
+        n_samples = X.shape[0]
         # 混合係数の更新
-        self.weights_ = responsibilities.sum(axis=0) / n_samples
+        self._weights = responsibilities.sum(axis=0) / n_samples
 
         # 平均ベクトルの更新
         for k in range(self.n_components):
-            self.means_[k] = (responsibilities[:, k] @ X) / responsibilities[:, k].sum()
+            self._means[k] = (responsibilities[:, k] @ X) / responsibilities[:, k].sum()
 
         # 共分散行列の更新
         for k in range(self.n_components):
-            diff = X - self.means_[k]
-            self.covariances_[k] = (
+            diff = X - self._means[k]
+            self._covariances[k] = (
                 (diff * responsibilities[:, k][:, None]).T @ diff
             ) / responsibilities[:, k].sum()
 
@@ -151,19 +151,19 @@ class GMM:
         log_likelihood : float
             対数尤度
         """
-        n_samples, n_features = X.shape
+        n_features = X.shape[1]
         log_likelihood = 0.0
 
         # 各成分の確率密度関数を計算
         for k in range(self.n_components):
-            diff = X - self.means_[k]
-            cov_inv = np.linalg.inv(self.covariances_[k])
+            diff = X - self._means[k]
+            cov_inv = np.linalg.inv(self._covariances[k])
             exponent = -0.5 * np.sum(diff @ cov_inv * diff, axis=1)
             coeff = 1 / (
                 (2 * np.pi) ** (n_features / 2)
-                * np.linalg.det(self.covariances_[k]) ** 0.5
+                * np.linalg.det(self._covariances[k]) ** 0.5
             )
-            log_likelihood += self.weights_[k] * coeff * np.exp(exponent)
+            log_likelihood += self._weights[k] * coeff * np.exp(exponent)
 
         return np.sum(np.log(log_likelihood))
 
@@ -189,10 +189,10 @@ class GMM:
             self._m_step(X, responsibilities)
             # 対数尤度の計算
             log_likelihood = self._compute_log_likelihood(X)
-            self.log_likelihoods_.append(log_likelihood)
+            self._log_likelihoods.append(log_likelihood)
 
             # 収束判定
-            if i > 0 and abs(log_likelihood - self.log_likelihoods_[-2]) < self.tol:
+            if i > 0 and abs(log_likelihood - self._log_likelihoods[-2]) < self.tol:
                 break
 
         return self
@@ -205,7 +205,7 @@ class GMM:
         -------
         labels : np.ndarray, shape (n_samples,)
         """
-        if not hasattr(self, "weights_"):
+        if not hasattr(self, "_weights"):
             raise ValueError("Model is not fitted yet. Call 'fit' before 'predict'.")
 
         responsibilities = self._e_step(X)
@@ -263,7 +263,7 @@ def plot_gmm_results_1D(gmm: GMM, X: np.ndarray) -> None:
     plt.scatter(xs, zs, c=labels, cmap="viridis", alpha=0.6, s=30)
 
     # クラスタ平均のプロット
-    means = gmm.means_.ravel()
+    means = gmm._means.ravel()
     plt.scatter(means, np.zeros_like(means), c="red", marker="x", s=100, label="means")
 
     # 描画領域
@@ -273,8 +273,8 @@ def plot_gmm_results_1D(gmm: GMM, X: np.ndarray) -> None:
     # 確率密度関数
     pdf = np.zeros(xx.shape[0])
     for k in range(gmm.n_components):
-        rv = multivariate_normal(mean=gmm.means_[k], cov=gmm.covariances_[k])
-        pdf += gmm.weights_[k] * rv.pdf(xx)
+        rv = multivariate_normal(mean=gmm._means[k], cov=gmm._covariances[k])
+        pdf += gmm._weights[k] * rv.pdf(xx)
     plt.plot(xx.ravel(), pdf, color="black", linewidth=1, label="GMM PDF")
 
     plt.xlabel("x")
@@ -306,7 +306,7 @@ def plot_gmm_results_2D(gmm: GMM, X: np.ndarray) -> None:
     ax.scatter(X[:, 0], X[:, 1], c=labels, cmap="viridis", alpha=0.6, s=30)
 
     # クラスタ平均のプロット
-    means = gmm.means_
+    means = gmm._means
     ax.scatter(means[:, 0], means[:, 1], c="red", marker="x", s=100, label="means")
 
     # 描画領域
@@ -318,8 +318,8 @@ def plot_gmm_results_2D(gmm: GMM, X: np.ndarray) -> None:
     # 混合ガウス分布の確率密度関数を計算
     pdf = np.zeros_like(xx)
     for k in range(gmm.n_components):
-        rv = multivariate_normal(mean=gmm.means_[k], cov=gmm.covariances_[k])
-        pdf += gmm.weights_[k] * rv.pdf(grid).reshape(xx.shape)
+        rv = multivariate_normal(mean=gmm._means[k], cov=gmm._covariances[k])
+        pdf += gmm._weights[k] * rv.pdf(grid).reshape(xx.shape)
 
     # 等高線のプロット
     cs = ax.contour(xx, yy, pdf, levels=10, cmap="viridis", linewidths=1.0)
@@ -367,7 +367,7 @@ def plot_log_likelihood(gmm: GMM) -> None:
         学習済み GMM モデル
     """
     plt.figure()
-    plt.plot(gmm.log_likelihoods_)
+    plt.plot(gmm._log_likelihoods)
     plt.title("data3")
     plt.xlabel("Iteration")
     plt.ylabel("Log Likelihood")
