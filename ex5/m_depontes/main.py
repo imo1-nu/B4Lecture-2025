@@ -35,8 +35,42 @@ def read_csv(path: str) -> np.ndarray:
     return data
 
 
-# 引用：https://github.com/beginaid/GMM-EM-VB/blob/main/src/GMMVB.py
 class GMMVB:
+    """Gaussian Mixture Model with Variational Bayes.
+    This class implements the Gaussian Mixture Model (GMM) using Variational Bayes for clustering.
+    It's cited from beginaid/GMM-EM-VB.
+    Original link is https://github.com/beginaid/GMM-EM-VB/blob/main/src/GMMVB.py
+    Appreciate the original author for their work.
+
+    Args:
+        K (int): The number of clusters.
+    Attributes:
+        K (int): The number of clusters.
+        eps (float): Small amounts to prevent overflow and underflow.
+        N (int): The number of data points.
+        D (int): The number of dimensions.
+        alpha0 (float): Initial value for alpha.
+        beta0 (float): Initial value for beta.
+        nu0 (float): Initial value for nu.
+        m0 (numpy ndarray): Initial value for m.
+        W0 (numpy ndarray): Initial value for W.
+        r (numpy ndarray): Responsibility matrix.
+        alpha (numpy ndarray): Updated alpha values.
+        beta (numpy ndarray): Updated beta values.
+        nu (numpy ndarray): Updated nu values.
+        m (numpy ndarray): Updated mean values.
+        W (numpy ndarray): Updated covariance matrices.
+        hdi (list): Highest density interval for each cluster.
+    Methods:
+        init_params(X): Initialize the parameters.
+        gmm_pdf(X): Calculate the log-likelihood of the D-dim. mixed Gaussian distribution at N data.
+        e_step(X): Execute the variational E-step of VB.
+        m_step(X): Execute the variational M-step of VB.
+        highest_density_interval(X): Calculate the highest density interval.
+        visualize(X, hdi=None): Execute the classification and visualize the results.
+        execute(X, iter_max, thr): Execute VB.
+    """
+
     def __init__(self, K):
         """Constructor.
 
@@ -84,7 +118,8 @@ class GMMVB:
             X (numpy ndarray): Input data whose size is (N, D).
 
         Returns:
-            Probability density function (numpy ndarray): Values of the mixed D-dimensional Gaussian distribution at N data whose size is (N, K).
+            Probability density function (numpy ndarray): Values of the mixed D-dimensional Gaussian distribution
+                                                          at N data whose size is (N, K).
         """
         pi = self.alpha / (np.sum(self.alpha, keepdims=True) + np.spacing(1))  # (K)
         return np.array(
@@ -202,22 +237,30 @@ class GMMVB:
         self.hdi = []
         for k in range(self.K):
             # Calculate posterior distribution and take samples
-            rv = multivariate_normal(self.m[k, :self.D], self.W[k])
+            rv = multivariate_normal(self.m[k, : self.D], self.W[k])
             samples = rv.rvs(size=50000)
             hdi_k = []
             # Calculate the highest density interval using the samples
             for n in range(self.D):
                 samples_1D = np.sort(samples[:, n]) if self.D > 1 else np.sort(samples)
                 print(samples_1D)
-                l = 0.95 * len(samples_1D)
-                L = [samples_1D[i + int(l)] - samples_1D[i] for i in range(len(samples_1D)-int(l))]
+                length = 0.95 * len(samples_1D)
+                L = [
+                    samples_1D[i + int(length)] - samples_1D[i]
+                    for i in range(len(samples_1D) - int(length))
+                ]
                 i_star = np.argmin(L)
-                hdi_k.append((samples_1D[i_star], samples_1D[i_star+int(l)]))
+                hdi_k.append((samples_1D[i_star], samples_1D[i_star + int(length)]))
+
             self.hdi.append(hdi_k)
             if self.D == 1:
-                print(f"Cluster {k+1} (μ={self.m[k]}): HDI = {hdi_k[0][0]:.3f} ～ {hdi_k[0][1]:.3f}")
+                print(
+                    f"Cluster {k+1} (μ={self.m[k]}): HDI = {hdi_k[0][0]:.3f} ～ {hdi_k[0][1]:.3f}"
+                )
             elif self.D == 2:
-                print(f"Cluster {k+1} (μ={self.m[k]}): HDI = {hdi_k[0][0]:.3f} ～ {hdi_k[0][1]:.3f}, {hdi_k[1][0]:.3f} ～ {hdi_k[1][1]:.3f}")
+                print(
+                    f"Cluster {k+1} (μ={self.m[k]}): HDI = {hdi_k[0][0]:.3f} ～ {hdi_k[0][1]:.3f}, {hdi_k[1][0]:.3f} ～ {hdi_k[1][1]:.3f}"
+                )
 
     def visualize(self, X, hdi=None):
         """Execute the classification.
@@ -278,7 +321,9 @@ class GMMVB:
                 # Plot the Probability Density Function
                 if self.D == 1:
                     x = np.linspace(X[:, 0].min(), X[:, 0].max(), 30)
-                    rv = multivariate_normal(mean=self.m[k, :self.D], cov=la.pinv(self.nu[k] * self.W[k]))
+                    rv = multivariate_normal(
+                        mean=self.m[k, : self.D], cov=la.pinv(self.nu[k] * self.W[k])
+                    )
                     Z = rv.pdf(x)
                     ax.plot(x, Z, color=color_map, alpha=0.6)
                 elif self.D >= 2:
@@ -291,13 +336,15 @@ class GMMVB:
                     if self.D > 2:
                         pos[:, :, 2] = mean_z
 
-                    rv = multivariate_normal(mean=self.m[k, :self.D], cov=la.pinv(self.nu[k] * self.W[k]))
+                    rv = multivariate_normal(
+                        mean=self.m[k, : self.D], cov=la.pinv(self.nu[k] * self.W[k])
+                    )
                     Z = rv.pdf(pos.reshape(-1, self.D)).reshape(X_grid.shape)
                     ax.contour(
                         X_grid,
                         Y_grid,
                         Z,
-                        zdir='z',
+                        zdir="z",
                         offset=mean_z,
                         levels=3,
                         colors=[color_map],
@@ -307,7 +354,9 @@ class GMMVB:
                 # describe the highest density interval
                 if self.D == 1:
                     x = np.linspace(X[:, 0].min(), X[:, 0].max(), 300)
-                    rv = multivariate_normal(mean=self.m[k, :self.D], cov=la.pinv(self.nu[k] * self.W[k]))
+                    rv = multivariate_normal(
+                        mean=self.m[k, : self.D], cov=la.pinv(self.nu[k] * self.W[k])
+                    )
                     Z = rv.pdf(x)
                     ax.plot(x, Z, color=color_map, alpha=0.6)
                     x_min, x_max = hdi[k][0]
@@ -316,10 +365,10 @@ class GMMVB:
                         x[mask],
                         Z[mask],
                         zs=0,
-                        zdir='z',
+                        zdir="z",
                         color=color_map,
                         alpha=0.4,
-                        width=(x[1] - x[0])
+                        width=(x[1] - x[0]),
                     )
                 elif self.D >= 2:
                     x_min, x_max = hdi[k][0]
@@ -338,11 +387,10 @@ class GMMVB:
                         facecolors=color_map,
                         edgecolors=color_map,
                         linewidths=1,
-                        linestyles='-',
+                        linestyles="-",
                         alpha=0.4,
                     )
                     ax.add_collection3d(poly)
-                
 
         ax.set_xlabel("X1")
         ax.set_ylabel("X2")
@@ -394,7 +442,7 @@ class GMMVB:
             ):
                 print(f"VB has stopped after {i + 1} iteraions.")
                 self.highest_density_interval(X)
-                # self.visualize(X)
+                self.visualize(X)
                 self.visualize(X, hdi=self.hdi)
                 break
 
