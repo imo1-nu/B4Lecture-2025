@@ -35,6 +35,7 @@ def read_csv(path: str) -> np.ndarray:
     return data
 
 
+# 引用：https://github.com/beginaid/GMM-EM-VB/blob/main/src/GMMVB.py
 class GMMVB:
     def __init__(self, K):
         """Constructor.
@@ -280,7 +281,7 @@ class GMMVB:
                     rv = multivariate_normal(mean=self.m[k, :self.D], cov=la.pinv(self.nu[k] * self.W[k]))
                     Z = rv.pdf(x)
                     ax.plot(x, Z, color=color_map, alpha=0.6)
-                elif self.D == 2:
+                elif self.D >= 2:
                     x = np.linspace(X[:, 0].min(), X[:, 0].max(), 30)
                     y = np.linspace(X[:, 1].min(), X[:, 1].max(), 30)
                     X_grid, Y_grid = np.meshgrid(x, y)
@@ -303,7 +304,7 @@ class GMMVB:
                         alpha=0.6,
                     )
             else:
-                # Plot the highest density interval
+                # describe the highest density interval
                 if self.D == 1:
                     x = np.linspace(X[:, 0].min(), X[:, 0].max(), 300)
                     rv = multivariate_normal(mean=self.m[k, :self.D], cov=la.pinv(self.nu[k] * self.W[k]))
@@ -320,7 +321,7 @@ class GMMVB:
                         alpha=0.4,
                         width=(x[1] - x[0])
                     )
-                elif self.D == 2:
+                elif self.D >= 2:
                     x_min, x_max = hdi[k][0]
                     y_min, y_max = hdi[k][1]
                     z = mean_z
@@ -438,9 +439,6 @@ if __name__ == "__main__":
 
     # データの読み込み
     data = read_csv(args.path)
-
-    # 散布図の表示
-    # make_scatter(data, f"Scatter of {args.path.split('/')[-1].split('.')[0]}")
 
     # GMMVBの実行
     gmmvb = GMMVB(K=3)
