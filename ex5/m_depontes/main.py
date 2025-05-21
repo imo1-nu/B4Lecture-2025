@@ -37,6 +37,7 @@ def read_csv(path: str) -> np.ndarray:
 
 class GMMVB:
     """Gaussian Mixture Model with Variational Bayes.
+
     This class implements the Gaussian Mixture Model (GMM) using Variational Bayes for clustering.
     It's cited from beginaid/GMM-EM-VB.
     Original link is https://github.com/beginaid/GMM-EM-VB/blob/main/src/GMMVB.py
@@ -63,7 +64,7 @@ class GMMVB:
         hdi (list): Highest density interval for each cluster.
     Methods:
         init_params(X): Initialize the parameters.
-        gmm_pdf(X): Calculate the log-likelihood of the D-dim. mixed Gaussian distribution at N data.
+        gmm_pdf(X): Calculate the log-likelihood of the D-dim mixed Gaussian distribution at N data.
         e_step(X): Execute the variational E-step of VB.
         m_step(X): Execute the variational M-step of VB.
         highest_density_interval(X): Calculate the highest density interval.
@@ -72,7 +73,7 @@ class GMMVB:
     """
 
     def __init__(self, K):
-        """Constructor.
+        """Initialize Constructor.
 
         Args:
             K (int): The number of clusters.
@@ -118,8 +119,8 @@ class GMMVB:
             X (numpy ndarray): Input data whose size is (N, D).
 
         Returns:
-            Probability density function (numpy ndarray): Values of the mixed D-dimensional Gaussian distribution
-                                                          at N data whose size is (N, K).
+            Probability density function (numpy ndarray): Values of the mixed D-dim Gaussian
+                                                          distribution at N data.
         """
         pi = self.alpha / (np.sum(self.alpha, keepdims=True) + np.spacing(1))  # (K)
         return np.array(
@@ -255,11 +256,12 @@ class GMMVB:
             self.hdi.append(hdi_k)
             if self.D == 1:
                 print(
-                    f"Cluster {k+1} (μ={self.m[k]}): HDI = {hdi_k[0][0]:.3f} ～ {hdi_k[0][1]:.3f}"
+                    f"Cluster {k + 1} (μ={self.m[k]}): HDI = {hdi_k[0][0]:.3f} ～ {hdi_k[0][1]:.3f}"
                 )
             elif self.D == 2:
                 print(
-                    f"Cluster {k+1} (μ={self.m[k]}): HDI = {hdi_k[0][0]:.3f} ～ {hdi_k[0][1]:.3f}, {hdi_k[1][0]:.3f} ～ {hdi_k[1][1]:.3f}"
+                    f"Cluster {k + 1} (μ={self.m[k]}): HDI = {hdi_k[0][0]:.3f} ～ {hdi_k[0][1]:.3f}"
+                    f",{hdi_k[1][0]:.3f} ～ {hdi_k[1][1]:.3f}"
                 )
 
     def visualize(self, X, hdi=None):
@@ -274,7 +276,9 @@ class GMMVB:
         # Execute classification
         labels = np.argmax(self.r, 1)  # (N)
         # Visualize each clusters
-        label_frequency_desc = [l[0] for l in Counter(labels).most_common()]  # (K)
+        label_frequency_desc = [
+            label[0] for label in Counter(labels).most_common()
+        ]  # (K)
         # Prepare the visualization
         fig = plt.figure(figsize=(4, 4), dpi=300)
         ax = Axes3D(fig)
@@ -436,7 +440,8 @@ class GMMVB:
                     )
                 )
             )
-            # Visualization is performed when the convergence condition is met or when the upper limit is reached
+            # Visualization is performed when the convergence condition is met
+            # or when the upper limit is reached
             if (np.abs(log_likelihood_list[i] - log_likelihood_list[i + 1]) < thr) or (
                 i == iter_max - 1
             ):
