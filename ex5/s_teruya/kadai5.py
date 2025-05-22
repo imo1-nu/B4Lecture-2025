@@ -11,9 +11,10 @@
 """
 
 from collections import Counter  # 頻度カウント
+
 import matplotlib.pyplot as plt  # 可視化
-from mpl_toolkits.mplot3d import Axes3D  # 可視化
 import numpy as np  # 数値計算
+from mpl_toolkits.mplot3d import Axes3D  # 可視化
 from numpy import linalg as la  # 行列計算
 from scipy.special import digamma, logsumexp  # 数値計算
 from scipy.stats import multivariate_normal  # 多次元ガウス分布の確率密度関数の計算
@@ -107,7 +108,9 @@ class GMMVB:
         log_sigma_tilde = (
             np.sum([digamma((self.nu + 1 - i) / 2) for i in range(self.D)])
             + (self.D * np.log(2) + (np.log(la.det(self.W) + np.spacing(1))))
-        )[None, :]  # (1, K)
+        )[
+            None, :
+        ]  # (1, K)
         nu_tile = np.tile(self.nu[None, :], (self.N, 1))  # (N, K)
         res_error = np.tile(X[:, None, None, :], (1, self.K, 1, 1)) - np.tile(
             self.m[None, :, None, :], (self.N, 1, 1, 1)
@@ -158,7 +161,9 @@ class GMMVB:
         )  # (K, D, N)
         x_bar = np.sum(
             (r_tile * np.tile(X[None, :, :], (self.K, 1, 1)).transpose(0, 2, 1)), 2
-        ) / (N_k[:, None] + np.spacing(1))  # (K, D)
+        ) / (
+            N_k[:, None] + np.spacing(1)
+        )  # (K, D)
         res_error = np.tile(X[None, :, :], (self.K, 1, 1)).transpose(0, 2, 1) - np.tile(
             x_bar[:, :, None], (1, 1, self.N)
         )  # (K, D, N)
@@ -173,7 +178,9 @@ class GMMVB:
         self.m = (
             np.tile((self.beta0 * self.m0)[None, :], (self.K, 1))
             + (N_k[:, None] * x_bar)
-        ) / (self.beta[:, None] + np.spacing(1))  # (K, D)
+        ) / (
+            self.beta[:, None] + np.spacing(1)
+        )  # (K, D)
         W_inv = (
             la.pinv(self.W0)
             + (N_k[:, None, None] * S)
@@ -199,7 +206,7 @@ class GMMVB:
         return (self.m - z * np.sqrt(sigma_k), self.m + z * np.sqrt(sigma_k))
 
     def visualize(self, X, name, call_HDI=False):
-        """可視化を実行するメソッド
+        """可視化を実行するメソッド.
 
         Args:
             X (numpy ndarray): (N, D)サイズの入力データ
