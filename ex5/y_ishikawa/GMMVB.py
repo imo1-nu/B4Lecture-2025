@@ -176,7 +176,29 @@ class GMMVB:
         )  # (K, D, D)
         self.W = la.pinv(W_inv)  # (K, D, D)
 
-    def visualize(self, X, output_path="./results/clusters.png"):
+    def plot_highest_density_interval(self, dim, z=1.96):
+        """Plot the Highest Density Interval (HDI) for each component.
+
+        Args:
+            dim (int): Dimensionality of the data. Use `DIMENSION_1D` for 1D visualization,
+                otherwise assumes 2D.
+            z (float, optional): Z-score corresponding to the desired confidence level.
+                Defaults to 1.96 (approx. 95%).
+
+        """
+        for k, (m, W) in enumerate(zip(self.m, self.W, strict=True)):
+            sigma = np.diag(W)
+            hdi_range = np.array([m - z * np.sqrt(sigma), m + z * np.sqrt(sigma)])
+            x = np.linspace(hdi_range[0][0], hdi_range[1][0], 1000)
+
+            label = "HDI" if k == 0 else None
+            if dim == DIMENSION_1D:
+                plt.fill_between(x, -10, 10, alpha=0.8, label=label)
+                plt.ylim(-5, 5)
+            else:
+                plt.fill_between(x, hdi_range[0][1], hdi_range[1][1], alpha=0.8, label=label)
+
+    def visualize(self, X, output_path="./results/clusters.png", HDI=False):
         """Execute the classification.
 
         Args:
@@ -220,31 +242,36 @@ class GMMVB:
             label="Centroids",
         )
 
-        # plot probability density
-        if dim == DIMENSION_1D:
-            x = np.linspace(min(X[:, 0]) * 1.1, max(X[:, 0]) * 1.1, 1000)
-            y = np.sum(self.gmm_pdf(x), axis=1)
-            plt.plot(x, y, label="Probability density")
-        else:
-            x = np.linspace(
-                min(X[:, 0]) * 1.1,
-                max(X[:, 0]) * 1.1,
-                200,
-            )
-            y = np.linspace(
-                min(X[:, 1]) * 1.1,
-                max(X[:, 1]) * 1.1,
-                200,
-            )
-            x, y = np.meshgrid(x, y)
-            z = np.sum(self.gmm_pdf(np.column_stack([x.ravel(), y.ravel()])), axis=1).reshape(x.shape)
-            contour = plt.contour(x, y, z)
+        # plot HDI
+        if HDI:
+            self.plot_highest_density_interval(dim)
 
-            # plot continuous colorbar
-            norm = matplotlib.colors.Normalize(vmin=contour.cvalues.min(), vmax=contour.cvalues.max())
-            sm = plt.cm.ScalarMappable(norm=norm, cmap=contour.cmap)
-            sm.set_array([])
-            plt.colorbar(sm, ticks=contour.levels, label="Probability density")
+        # plot probability density
+        else:  # noqa: PLR5501
+            if dim == DIMENSION_1D:
+                x = np.linspace(min(X[:, 0]) * 1.1, max(X[:, 0]) * 1.1, 1000)
+                y = np.sum(self.gmm_pdf(x), axis=1)
+                plt.plot(x, y, label="Probability density")
+            else:
+                x = np.linspace(
+                    min(X[:, 0]) * 1.1,
+                    max(X[:, 0]) * 1.1,
+                    200,
+                )
+                y = np.linspace(
+                    min(X[:, 1]) * 1.1,
+                    max(X[:, 1]) * 1.1,
+                    200,
+                )
+                x, y = np.meshgrid(x, y)
+                z = np.sum(self.gmm_pdf(np.column_stack([x.ravel(), y.ravel()])), axis=1).reshape(x.shape)
+                contour = plt.contour(x, y, z)
+
+                # plot continuous colorbar
+                norm = matplotlib.colors.Normalize(vmin=contour.cvalues.min(), vmax=contour.cvalues.max())
+                sm = plt.cm.ScalarMappable(norm=norm, cmap=contour.cmap)
+                sm.set_array([])
+                plt.colorbar(sm, ticks=contour.levels, label="Probability density")
 
         plt.xlabel(r"$x$")
         if dim == DIMENSION_1D:
@@ -389,3 +416,4 @@ if __name__ == "__main__":
         model = GMMVB(cluster_num)
         model.execute(df.to_numpy(), iter_max=iter_max, thr=threshold)
         model.visualize(df.to_numpy(), output_path=output_dir / f"{title}_cluster.png")
+        model.visualize(df.to_numpy(), output_path=output_dir / f"{title}_HDI.png", HDI=True)
