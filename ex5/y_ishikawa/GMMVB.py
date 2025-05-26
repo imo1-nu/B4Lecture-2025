@@ -43,7 +43,7 @@ class GMMVB:
     """
 
     def __init__(self, K):
-        """Constructor.
+        """Construct a new instance of the class.
 
         Args:
             K (int): The number of clusters.
@@ -89,7 +89,8 @@ class GMMVB:
             X (numpy ndarray): Input data whose size is (N, D).
 
         Returns:
-            Probability density function (numpy ndarray): Values of the mixed D-dimensional Gaussian distribution at N data whose size is (N, K).
+            Probability density function (numpy ndarray): Values of the
+            mixedD-dimensional Gaussian distribution at N data whose size is (N, K).
         """
         pi = self.alpha / (np.sum(self.alpha, keepdims=True) + np.spacing(1))  # (K)
         return np.array(
@@ -116,7 +117,9 @@ class GMMVB:
         # Calculate the optimized Lambda_titlde
         log_sigma_tilde = np.sum(
             [digamma((self.nu + 1 - i) / 2) for i in range(self.D)]
-        ) + (self.D * np.log(2) + (np.log(la.det(self.W) + np.spacing(1))))  # (K)
+        ) + (
+            self.D * np.log(2) + (np.log(la.det(self.W) + np.spacing(1)))
+        )  # (K)
         nu_tile = np.tile(self.nu[None, :], (self.N, 1))  # (N, K)
         res_error = np.tile(X[:, None, None, :], (1, self.K, 1, 1)) - np.tile(
             self.m[None, :, None, :], (self.N, 1, 1, 1)
@@ -158,7 +161,9 @@ class GMMVB:
         )  # (K, D, N)
         x_bar = np.sum(
             (r_tile * np.tile(X[None, :, :], (self.K, 1, 1)).transpose(0, 2, 1)), 2
-        ) / (N_k[:, None] + np.spacing(1))  # (K, D)
+        ) / (
+            N_k[:, None] + np.spacing(1)
+        )  # (K, D)
         res_error = np.tile(X[None, :, :], (self.K, 1, 1)).transpose(0, 2, 1) - np.tile(
             x_bar[:, :, None], (1, 1, self.N)
         )  # (K, D, N)
@@ -173,7 +178,9 @@ class GMMVB:
         self.m = (
             np.tile((self.beta0 * self.m0)[None, :], (self.K, 1))
             + (N_k[:, None] * x_bar)
-        ) / (self.beta[:, None] + np.spacing(1))  # (K, D)
+        ) / (
+            self.beta[:, None] + np.spacing(1)
+        )  # (K, D)
         W_inv = (
             la.pinv(self.W0)
             + (N_k[:, None, None] * S)
@@ -339,7 +346,8 @@ class GMMVB:
                     )
                 )
             )
-            # Visualization is performed when the convergence condition is met or when the upper limit is reached
+            # Visualization is performed when the convergence condition is met or when
+            # the upper limit is reached
             if (np.abs(log_likelihood_list[i] - log_likelihood_list[i + 1]) < thr) or (
                 i == iter_max - 1
             ):
