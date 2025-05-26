@@ -94,7 +94,10 @@ class GMMVB:
         pi = self.alpha / (np.sum(self.alpha, keepdims=True) + np.spacing(1))  # (K)
         return np.array(
             [
-                pi[k] * multivariate_normal.pdf(X, mean=self.m[k], cov=la.pinv(self.nu[:, None, None] * self.W)[k])
+                pi[k]
+                * multivariate_normal.pdf(
+                    X, mean=self.m[k], cov=la.pinv(self.nu[:, None, None] * self.W)[k]
+                )
                 for k in range(self.K)
             ]
         ).T  # (N, K)
@@ -111,18 +114,19 @@ class GMMVB:
         # Calculate and update the optimized Pi
         log_pi_tilde = digamma(self.alpha) - digamma(self.alpha.sum())  # (K)
         # Calculate the optimized Lambda_titlde
-        log_sigma_tilde = np.sum([digamma((self.nu + 1 - i) / 2) for i in range(self.D)]) + (
-            self.D * np.log(2) + (np.log(la.det(self.W) + np.spacing(1)))
-        )  # (K)
+        log_sigma_tilde = np.sum(
+            [digamma((self.nu + 1 - i) / 2) for i in range(self.D)]
+        ) + (self.D * np.log(2) + (np.log(la.det(self.W) + np.spacing(1))))  # (K)
         nu_tile = np.tile(self.nu[None, :], (self.N, 1))  # (N, K)
         res_error = np.tile(X[:, None, None, :], (1, self.K, 1, 1)) - np.tile(
             self.m[None, :, None, :], (self.N, 1, 1, 1)
         )  # (N, K, 1, D)
         quadratic = (
             nu_tile
-            * ((res_error @ np.tile(self.W[None, :, :, :], (self.N, 1, 1, 1))) @ res_error.transpose(0, 1, 3, 2))[
-                :, :, 0, 0
-            ]
+            * (
+                (res_error @ np.tile(self.W[None, :, :, :], (self.N, 1, 1, 1)))
+                @ res_error.transpose(0, 1, 3, 2)
+            )[:, :, 0, 0]
         )  # (N, K)
         log_rho = (
             (log_pi_tilde[None, :])
@@ -149,27 +153,36 @@ class GMMVB:
         """
         # Calculate the optimized N_k
         N_k = np.sum(self.r, 0)  # (K)
-        r_tile = np.tile(self.r[:, :, None], (1, 1, self.D)).transpose(1, 2, 0)  # (K, D, N)
-        x_bar = np.sum((r_tile * np.tile(X[None, :, :], (self.K, 1, 1)).transpose(0, 2, 1)), 2) / (
-            N_k[:, None] + np.spacing(1)
-        )  # (K, D)
+        r_tile = np.tile(self.r[:, :, None], (1, 1, self.D)).transpose(
+            1, 2, 0
+        )  # (K, D, N)
+        x_bar = np.sum(
+            (r_tile * np.tile(X[None, :, :], (self.K, 1, 1)).transpose(0, 2, 1)), 2
+        ) / (N_k[:, None] + np.spacing(1))  # (K, D)
         res_error = np.tile(X[None, :, :], (self.K, 1, 1)).transpose(0, 2, 1) - np.tile(
             x_bar[:, :, None], (1, 1, self.N)
         )  # (K, D, N)
-        S = ((r_tile * res_error) @ res_error.transpose(0, 2, 1)) / (N_k[:, None, None] + np.spacing(1))  # (K, D, D)
+        S = ((r_tile * res_error) @ res_error.transpose(0, 2, 1)) / (
+            N_k[:, None, None] + np.spacing(1)
+        )  # (K, D, D)
         res_error_bar = x_bar - np.tile(self.m0[None, :], (self.K, 1))  # (K, D)
         # Update the optimized parameters
         self.alpha = self.alpha0 + N_k  # (K)
         self.beta = self.beta0 + N_k  # (K)
         self.nu = self.nu0 + N_k  # (K)
-        self.m = (np.tile((self.beta0 * self.m0)[None, :], (self.K, 1)) + (N_k[:, None] * x_bar)) / (
-            self.beta[:, None] + np.spacing(1)
-        )  # (K, D)
+        self.m = (
+            np.tile((self.beta0 * self.m0)[None, :], (self.K, 1))
+            + (N_k[:, None] * x_bar)
+        ) / (self.beta[:, None] + np.spacing(1))  # (K, D)
         W_inv = (
             la.pinv(self.W0)
             + (N_k[:, None, None] * S)
             + (
-                ((self.beta0 * N_k)[:, None, None] * res_error_bar[:, :, None] @ res_error_bar[:, None, :])
+                (
+                    (self.beta0 * N_k)[:, None, None]
+                    * res_error_bar[:, :, None]
+                    @ res_error_bar[:, None, :]
+                )
                 / (self.beta0 + N_k)[:, None, None]
                 + np.spacing(1)
             )
@@ -196,7 +209,9 @@ class GMMVB:
                 plt.fill_between(x, -10, 10, alpha=0.8, label=label)
                 plt.ylim(-5, 5)
             else:
-                plt.fill_between(x, hdi_range[0][1], hdi_range[1][1], alpha=0.8, label=label)
+                plt.fill_between(
+                    x, hdi_range[0][1], hdi_range[1][1], alpha=0.8, label=label
+                )
 
     def visualize(self, X, output_path="./results/clusters.png", HDI=False):
         """Execute the classification.
@@ -264,11 +279,15 @@ class GMMVB:
                     200,
                 )
                 x, y = np.meshgrid(x, y)
-                z = np.sum(self.gmm_pdf(np.column_stack([x.ravel(), y.ravel()])), axis=1).reshape(x.shape)
+                z = np.sum(
+                    self.gmm_pdf(np.column_stack([x.ravel(), y.ravel()])), axis=1
+                ).reshape(x.shape)
                 contour = plt.contour(x, y, z)
 
                 # plot continuous colorbar
-                norm = matplotlib.colors.Normalize(vmin=contour.cvalues.min(), vmax=contour.cvalues.max())
+                norm = matplotlib.colors.Normalize(
+                    vmin=contour.cvalues.min(), vmax=contour.cvalues.max()
+                )
                 sm = plt.cm.ScalarMappable(norm=norm, cmap=contour.cmap)
                 sm.set_array([])
                 plt.colorbar(sm, ticks=contour.levels, label="Probability density")
@@ -298,7 +317,9 @@ class GMMVB:
         # Prepare the list of the log_likelihood at each iteration
         log_likelihood_list = []
         # Calculate the initial log-likelihood
-        log_likelihood_list.append(np.mean(np.log(np.sum(self.gmm_pdf(X), 1) + self.eps)))
+        log_likelihood_list.append(
+            np.mean(np.log(np.sum(self.gmm_pdf(X), 1) + self.eps))
+        )
         # Start the iteration
         for i in range(iter_max):
             # Execute E-step
@@ -306,11 +327,22 @@ class GMMVB:
             # Execute M-step
             self.m_step(X)
             # Add the current log-likelihood
-            log_likelihood_list.append(np.mean(np.log(np.sum(self.gmm_pdf(X), 1) + self.eps)))
+            log_likelihood_list.append(
+                np.mean(np.log(np.sum(self.gmm_pdf(X), 1) + self.eps))
+            )
             # Print the gap between the previous log-likelihood and current one
-            print("Log-likelihood gap: " + str(round(np.abs(log_likelihood_list[i] - log_likelihood_list[i + 1]), 2)))
+            print(
+                "Log-likelihood gap: "
+                + str(
+                    round(
+                        np.abs(log_likelihood_list[i] - log_likelihood_list[i + 1]), 2
+                    )
+                )
+            )
             # Visualization is performed when the convergence condition is met or when the upper limit is reached
-            if (np.abs(log_likelihood_list[i] - log_likelihood_list[i + 1]) < thr) or (i == iter_max - 1):
+            if (np.abs(log_likelihood_list[i] - log_likelihood_list[i + 1]) < thr) or (
+                i == iter_max - 1
+            ):
                 print(f"VB has stopped after {i + 1} iteraions.")
                 break
 
@@ -416,4 +448,6 @@ if __name__ == "__main__":
         model = GMMVB(cluster_num)
         model.execute(df.to_numpy(), iter_max=iter_max, thr=threshold)
         model.visualize(df.to_numpy(), output_path=output_dir / f"{title}_cluster.png")
-        model.visualize(df.to_numpy(), output_path=output_dir / f"{title}_HDI.png", HDI=True)
+        model.visualize(
+            df.to_numpy(), output_path=output_dir / f"{title}_HDI.png", HDI=True
+        )
