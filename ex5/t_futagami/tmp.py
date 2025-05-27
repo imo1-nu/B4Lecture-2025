@@ -3,10 +3,10 @@ from collections import Counter
 import fire
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import Ellipse
+from matplotlib import colors
 from numpy import linalg as la
 from scipy.special import digamma, logsumexp
-from scipy.stats import chi2, multivariate_normal
+from scipy.stats import multivariate_normal
 
 
 class GMMVB:
@@ -198,12 +198,11 @@ class GMMVB:
                 X[idx, 0],
                 np.zeros_like(X[idx, 0]),
                 color=cols,
-                s=1,
+                s=10,
                 marker="o",
             )
             z = 1.96  # 95% confidence interval
-            cov = la.pinv(self.nu[label] * self.W[label])
-            sigma = np.sqrt(cov[0, 0])
+            sigma = np.sqrt(self.W[label, 0, 0])
             hdi = (
                 self.m[label, 0] - z * sigma,
                 self.m[label, 0] + z * sigma,
@@ -228,7 +227,7 @@ class GMMVB:
         )
 
         ax.set_xlabel("x")
-        ax.set_title("data")
+        ax.set_title("data1")
         ax.set_ylim(-1, 1)
         ax.legend()
         fig.savefig("./figs/clusters.png")
@@ -261,40 +260,16 @@ class GMMVB:
                 X[idx, 0],
                 X[idx, 1],
                 color=cols,
-                s=1,
+                s=10,
                 marker="o",
             )
         # Plot the means of each cluster
         means = self.m[label_frequency_desc, :]  # (K, D)
         ax.scatter(means[:, 0], means[:, 1], color="black", marker="x", s=100, label="means")
-        # HDI ellipses (95% interval)
-        chi2_val = chi2.ppf(0.95, df=2)
-        for order, label in enumerate(label_frequency_desc):
-            # approximate covariance from posterior precision
-            cov = la.pinv(self.nu[label] * self.W[label])
-            # eigen-decomposition
-            eigvals, eigvecs = np.linalg.eigh(cov)
-            idx_sort = eigvals.argsort()[::-1]
-            eigvals, eigvecs = eigvals[idx_sort], eigvecs[:, idx_sort]
-            # ellipse params
-            width, height = 2 * np.sqrt(eigvals * chi2_val)
-            angle = np.degrees(np.arctan2(eigvecs[1, 0], eigvecs[0, 0]))
-            legend = "HDI" if order == 0 else None
-            ellipse = Ellipse(
-                self.m[label],
-                width,
-                height,
-                angle=angle,
-                edgecolor=cm(order),
-                facecolor="none",
-                lw=1.5,
-                label=legend,
-            )
-            ax.add_patch(ellipse)
         ax.set_xlabel("x1")
         ax.set_ylabel("x2")
         ax.legend()
-        ax.set_title("data")
+        ax.set_title("data3")
         fig.savefig("./figs/clusters.png")
 
     def execute(self, X, iter_max, thr):
