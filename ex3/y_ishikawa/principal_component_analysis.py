@@ -192,10 +192,14 @@ def plot_scatter(  # noqa: PLR0913
             ]
         )
         colors = ["r", "g", "b"]
-        t = np.array([-50, 50])
         for i, (eig_vec, contribution) in enumerate(
             zip(pca.transform_matrix.T, pca.contributions, strict=True)
         ):
+            max_idx = np.argmax(np.abs(eig_vec))
+            t = (
+                np.linspace(min(df.iloc[:, max_idx]), max(df.iloc[:, max_idx]), 100)
+                - center[max_idx]
+            )
             line = t[:, np.newaxis] * eig_vec + center
             ax.plot(
                 line[:, 0],
