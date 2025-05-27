@@ -220,7 +220,7 @@ class GMMVB:
                     x, hdi_range[0][1], hdi_range[1][1], alpha=0.8, label=label
                 )
 
-    def visualize(self, X, output_path="./results/clusters.png", HDI=False):
+    def visualize(self, X, output_path=Path("./results/clusters.png"), HDI=False):
         """Execute the classification.
 
         Args:
@@ -229,6 +229,9 @@ class GMMVB:
         Returns:
             None.
         """
+        # make directory if not exists
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
         _, dim = X.shape
 
         # Execute classification
@@ -307,6 +310,7 @@ class GMMVB:
         plt.legend()
         plt.savefig(output_path)
         plt.show()
+        plt.close()
 
     def execute(self, X, iter_max, thr):
         """Execute VB.
