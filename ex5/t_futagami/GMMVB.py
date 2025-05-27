@@ -241,11 +241,11 @@ class GMMVB:
                 marker="o",
             )
             z = 1.96  # 95% confidence interval
-            cov = la.pinv(self.nu[label] * self.W[label])
-            sigma = np.sqrt(cov[0, 0])
+            lambda_ = self.beta[label] * self.nu[label] * self.W[label] + np.spacing(1)
+            cov = np.sqrt(1 / lambda_[0, 0])
             hdi = (
-                self.m[label, 0] - z * sigma,
-                self.m[label, 0] + z * sigma,
+                self.m[label, 0] - z * cov,
+                self.m[label, 0] + z * cov,
             )
             height = 2
             y_min = -height / 2
@@ -317,7 +317,8 @@ class GMMVB:
         chi2_val = chi2.ppf(0.95, df=2)
         for order, label in enumerate(label_frequency_desc):
             # approximate covariance from posterior precision
-            cov = la.pinv(self.nu[label] * self.W[label])
+            lambda_ = self.beta[label] * self.nu[label] * self.W[label] + np.spacing(1)
+            cov = la.pinv(lambda_)  # (D, D)
             # eigen-decomposition
             eigvals, eigvecs = np.linalg.eigh(cov)
             idx_sort = eigvals.argsort()[::-1]
