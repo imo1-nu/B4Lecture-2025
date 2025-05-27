@@ -85,7 +85,9 @@ class GMMVB:
             X (numpy ndarray): Input data whose size is (N, D).
 
         Returns:
-            Probability density function (numpy ndarray): Values of the mixed D-dimensional Gaussian distribution at N data whose size is (N, K).
+            Probability density function (numpy ndarray):
+                The probability density function of the GMM at each data point.
+                Size is (N, K).
         """
         pi = self.alpha / (np.sum(self.alpha, keepdims=True) + np.spacing(1))  # (K)
         return np.array(
@@ -219,7 +221,7 @@ class GMMVB:
         # Execute classification
         labels = np.argmax(self.r, 1)  # (N)
         # Visualize each clusters
-        label_frequency_desc = [l[0] for l in Counter(labels).most_common()]
+        label_frequency_desc = [label[0] for label in Counter(labels).most_common()]
         # Prepare the visualization
         fig, ax = plt.subplots(figsize=(4, 4), dpi=300)
         # Use the custome color list.
@@ -287,7 +289,7 @@ class GMMVB:
         # Execute classification
         labels = np.argmax(self.r, 1)  # (N)
         # Visualize each clusters
-        label_frequency_desc = [l[0] for l in Counter(labels).most_common()]
+        label_frequency_desc = [label[0] for label in Counter(labels).most_common()]
         # Prepare the visualization
         fig, ax = plt.subplots(figsize=(4, 4), dpi=300)
         # Use the custome color list.
@@ -379,7 +381,7 @@ class GMMVB:
                     )
                 )
             )
-            # Visualization is performed when the convergence condition is met or when the upper limit is reached
+            # Check the convergence condition
             if (np.abs(log_likelihood_list[i] - log_likelihood_list[i + 1]) < thr) or (
                 i == iter_max - 1
             ):
@@ -389,7 +391,7 @@ class GMMVB:
 
 
 def main(K):
-    """Main function to execute the GMMVB algorithm.
+    """Execute the GMMVB algorithm.
 
     Args:
         K (int): The number of clusters.
