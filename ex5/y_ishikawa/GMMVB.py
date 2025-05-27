@@ -231,7 +231,7 @@ class GMMVB:
         """
         # make directory if not exists
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         _, dim = X.shape
 
         # Execute classification
