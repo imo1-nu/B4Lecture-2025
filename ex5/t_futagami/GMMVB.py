@@ -1,3 +1,9 @@
+"""
+GMMVBクラスを実装するモジュール.
+
+パラメータを推定し, HDIを可視化する.
+"""
+
 from collections import Counter
 
 import fire
@@ -10,8 +16,30 @@ from scipy.stats import chi2, multivariate_normal
 
 
 class GMMVB:
+    """
+    ガウス混合モデル(GMM)の変分ベイズ推定を実行するクラス.
+
+    Parameters:
+        K (int): クラスタ数.
+    Attributes:
+        eps (float): オーバーフローとアンダーフローを防ぐための小さな値.
+        N (int): データのサンプル数.
+        D (int): データの次元数.
+        alpha0 (float): 初期の重み係数.
+        beta0 (float): 初期のスケールパラメータ.
+        nu0 (float): 初期の自由度パラメータ.
+        m0 (numpy ndarray): 初期の平均ベクトル.
+        W0 (numpy ndarray): 初期の共分散行列.
+        r (numpy ndarray): 責任行列.
+        alpha (numpy ndarray): 更新された重み係数.
+        beta (numpy ndarray): 更新されたスケールパラメータ.
+        nu (numpy ndarray): 更新された自由度パラメータ.
+        m (numpy ndarray): 更新された平均ベクトル.
+        W (numpy ndarray): 更新された共分散行列.
+    """
+
     def __init__(self, K):
-        """Constructor.
+        """Initialize the GMMVB class.
 
         Args:
             K (int): The number of clusters.
@@ -82,7 +110,9 @@ class GMMVB:
         # Calculate and update the optimized Pi
         log_pi_tilde = digamma(self.alpha) - digamma(self.alpha.sum())  # (K)
         # Calculate the optimized Lambda_titlde
-        log_sigma_tilde = np.sum([digamma((self.nu + 1 - i) / 2) for i in range(self.D)]) + (
+        log_sigma_tilde = np.sum(
+            [digamma((self.nu + 1 - i) / 2) for i in range(self.D)]
+        ) + (
             self.D * np.log(2) + (np.log(la.det(self.W) + np.spacing(1)))
         )  # (K)
         nu_tile = np.tile(self.nu[None, :], (self.N, 1))  # (N, K)
@@ -121,8 +151,12 @@ class GMMVB:
         """
         # Calculate the optimized N_k
         N_k = np.sum(self.r, 0)  # (K)
-        r_tile = np.tile(self.r[:, :, None], (1, 1, self.D)).transpose(1, 2, 0)  # (K, D, N)
-        x_bar = np.sum((r_tile * np.tile(X[None, :, :], (self.K, 1, 1)).transpose(0, 2, 1)), 2) / (
+        r_tile = np.tile(self.r[:, :, None], (1, 1, self.D)).transpose(
+            1, 2, 0
+        )  # (K, D, N)
+        x_bar = np.sum(
+            (r_tile * np.tile(X[None, :, :], (self.K, 1, 1)).transpose(0, 2, 1)), 2
+        ) / (
             N_k[:, None] + np.spacing(1)
         )  # (K, D)
         res_error = np.tile(X[None, :, :], (self.K, 1, 1)).transpose(0, 2, 1) - np.tile(
@@ -137,8 +171,11 @@ class GMMVB:
         self.beta = self.beta0 + N_k  # (K)
         self.nu = self.nu0 + N_k  # (K)
         self.m = (
-            np.tile((self.beta0 * self.m0)[None, :], (self.K, 1)) + (N_k[:, None] * x_bar)
-        ) / (self.beta[:, None] + np.spacing(1))  # (K, D)
+            np.tile((self.beta0 * self.m0)[None, :], (self.K, 1))
+            + (N_k[:, None] * x_bar)
+        ) / (
+            self.beta[:, None] + np.spacing(1)
+        )  # (K, D)
         W_inv = (
             la.pinv(self.W0)
             + (N_k[:, None, None] * S)
@@ -224,7 +261,12 @@ class GMMVB:
         # Plot the means of each cluster
         means = self.m[label_frequency_desc, :]  # (K, D)
         ax.scatter(
-            means[:, 0], np.zeros_like(means[:, 0]), color="black", marker="x", s=100, label="means"
+            means[:, 0],
+            np.zeros_like(means[:, 0]),
+            color="black",
+            marker="x",
+            s=100,
+            label="means",
         )
 
         ax.set_xlabel("x")
@@ -266,7 +308,9 @@ class GMMVB:
             )
         # Plot the means of each cluster
         means = self.m[label_frequency_desc, :]  # (K, D)
-        ax.scatter(means[:, 0], means[:, 1], color="black", marker="x", s=100, label="means")
+        ax.scatter(
+            means[:, 0], means[:, 1], color="black", marker="x", s=100, label="means"
+        )
         # HDI ellipses (95% interval)
         chi2_val = chi2.ppf(0.95, df=2)
         for order, label in enumerate(label_frequency_desc):
@@ -313,7 +357,9 @@ class GMMVB:
         # Prepare the list of the log_likelihood at each iteration
         log_likelihood_list = []
         # Calculate the initial log-likelihood
-        log_likelihood_list.append(np.mean(np.log(np.sum(self.gmm_pdf(X), 1) + self.eps)))
+        log_likelihood_list.append(
+            np.mean(np.log(np.sum(self.gmm_pdf(X), 1) + self.eps))
+        )
         # Start the iteration
         for i in range(iter_max):
             # Execute E-step
@@ -321,11 +367,17 @@ class GMMVB:
             # Execute M-step
             self.m_step(X)
             # Add the current log-likelihood
-            log_likelihood_list.append(np.mean(np.log(np.sum(self.gmm_pdf(X), 1) + self.eps)))
+            log_likelihood_list.append(
+                np.mean(np.log(np.sum(self.gmm_pdf(X), 1) + self.eps))
+            )
             # Print the gap between the previous log-likelihood and current one
             print(
                 "Log-likelihood gap: "
-                + str(round(np.abs(log_likelihood_list[i] - log_likelihood_list[i + 1]), 2))
+                + str(
+                    round(
+                        np.abs(log_likelihood_list[i] - log_likelihood_list[i + 1]), 2
+                    )
+                )
             )
             # Visualization is performed when the convergence condition is met or when the upper limit is reached
             if (np.abs(log_likelihood_list[i] - log_likelihood_list[i + 1]) < thr) or (
@@ -337,6 +389,13 @@ class GMMVB:
 
 
 def main(K):
+    """Main function to execute the GMMVB algorithm.
+
+    Args:
+        K (int): The number of clusters.
+    Returns:
+        GMMVB instance: An instance of the GMMVB class initialized with K clusters.
+    """
     return GMMVB(K)
 
 

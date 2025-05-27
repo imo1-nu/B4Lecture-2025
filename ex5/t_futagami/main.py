@@ -1,9 +1,14 @@
+"""
+GMMベースのクラスタリングを実行するプログラム.
+
+GMMVBクラスを使用して, 与えられたデータセットに対して
+ガウス混合モデル(GMM)を学習し、クラスタリングを行う.
+"""
+
 import argparse
 
 import numpy as np
 from GMMVB import GMMVB  # GMMVBクラスをインポート
-
-# English comments for the functions
 
 
 def parse_arguments() -> argparse.Namespace:
