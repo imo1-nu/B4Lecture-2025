@@ -54,3 +54,4 @@ jobs:
       - uses: isort/isort-action@v1
         with:
           sort-paths: "${{needs.get-files-changed.outputs.files}}"
+          configuration: "--profile black"
