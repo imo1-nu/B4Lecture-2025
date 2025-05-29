@@ -86,10 +86,7 @@ class HMM:
         delta = start_prob * emission_prob[:, output[0]]  # 初期化
         # δの計算
         for t in range(1, T):
-            delta = (
-                np.max(delta[:, None] * transition_prob, axis=0)
-                * emission_prob[:, output[t]]
-            )
+            delta = np.max(delta[:, None] * transition_prob, axis=0) * emission_prob[:, output[t]]
         return np.max(delta)  # 最も可能性の高い状態遷移の確率を返す
 
     def visualize(self, predict_models: np.ndarray, title: str, file_name: str) -> None:
@@ -115,9 +112,7 @@ class HMM:
         ax.set_yticks(np.arange(K))
         for (i, j), val in np.ndenumerate(table):
             text_color = "white" if val > table.max() / 2 else "black"
-            ax.text(
-                j, i, int(val), ha="center", va="center", color=text_color, fontsize=12
-            )
+            ax.text(j, i, int(val), ha="center", va="center", color=text_color, fontsize=12)
         ax.set_xticklabels([i + 1 for i in range(K)], fontsize=12)
         ax.set_yticklabels([i + 1 for i in range(K)], fontsize=12)
         ax.set_xlabel("Predicted model", fontsize=12)
@@ -172,8 +167,8 @@ class HMM:
             predict_viterbi.append(np.argmax(viterbi_results))
 
         # 平均実行時間の計算と結果の表示
-        print(f"Forward algorithm time: {np.mean(time_forward):.4f} seconds")
-        print(f"Viterbi algorithm time: {np.mean(time_viterbi):.4f} seconds")
+        print(f"Forward algorithm time: {np.sum(time_forward):.4f} seconds")
+        print(f"Viterbi algorithm time: {np.sum(time_viterbi):.4f} seconds")
         self.visualize(
             np.array(predict_forward),
             title="Forward algorithm",
