@@ -8,8 +8,7 @@ from typing import TypedDict
 
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import (ConfusionMatrixDisplay, accuracy_score,
-                             confusion_matrix)
+from sklearn.metrics import ConfusionMatrixDisplay, accuracy_score, confusion_matrix
 
 
 class Models(TypedDict):
@@ -112,9 +111,7 @@ class HMM:
         likelihood = np.zeros((output_num, self.model_num))
 
         for output_idx, output in enumerate(outputs):
-            for model_idx, (A, B, PI) in enumerate(
-                zip(self.A, self.B, self.PI, strict=True)
-            ):
+            for model_idx, (A, B, PI) in enumerate(zip(self.A, self.B, self.PI, strict=True)):
                 alpha = PI.reshape(-1)
                 for i, out in enumerate(output):
                     if i != 0:
@@ -143,9 +140,7 @@ class HMM:
         likelihood = np.zeros((output_num, self.model_num))
 
         for output_idx, output in enumerate(outputs):
-            for model_idx, (A, B, PI) in enumerate(
-                zip(self.A, self.B, self.PI, strict=True)
-            ):
+            for model_idx, (A, B, PI) in enumerate(zip(self.A, self.B, self.PI, strict=True)):
                 delta = PI.reshape(-1)
                 for i, out in enumerate(output):
                     if i != 0:
@@ -248,16 +243,12 @@ if __name__ == "__main__":
         fig, axes = plt.subplots(1, 2, figsize=(10, 5))
         disp1 = ConfusionMatrixDisplay(confusion_matrix=forward_cm)
         disp1.plot(ax=axes[0], cmap="Greys", colorbar=False)
-        axes[0].set_title(
-            f"Forward algorithm\n(Acc. {forward_acc}%, Time. {forward_time:.3f}s)"
-        )
+        axes[0].set_title(f"Forward algorithm\n(Acc. {forward_acc}%, Time. {forward_time:.3f}s)")
 
         # plot viterbi confusion matrix
         disp2 = ConfusionMatrixDisplay(confusion_matrix=viterbi_cm)
         disp2.plot(ax=axes[1], cmap="Greys", colorbar=False)
-        axes[1].set_title(
-            f"Viterbi algorithm\n(Acc. {viterbi_acc}%, Time. {viterbi_time:.3f}s)"
-        )
+        axes[1].set_title(f"Viterbi algorithm\n(Acc. {viterbi_acc}%, Time. {viterbi_time:.3f}s)")
         plt.savefig(output_dir / input_path.with_suffix(".png").name)
         plt.show()
         plt.close()
