@@ -58,7 +58,7 @@ class HMM:
             float: 出力データの確率.
         """
         T = len(output)  # 出力の長さ
-        alpha = start_prob * emission_prob[:, output[0]]  # 初期化
+        alpha = start_prob.squeeze() * emission_prob[:, output[0]]  # 初期化
         # αの計算
         for t in range(1, T):
             alpha = alpha @ transition_prob * emission_prob[:, output[t]]
@@ -83,11 +83,11 @@ class HMM:
             float: 最も可能性の高い状態遷移の確率.
         """
         T = len(output)  # 出力の長さ
-        delta = start_prob * emission_prob[:, output[0]]  # 初期化
+        delta = start_prob.squeeze() * emission_prob[:, output[0]]  # 初期化
         # δの計算
         for t in range(1, T):
             delta = (
-                np.max(delta[:, None] * transition_prob, axis=0)
+                np.max(delta.reshape(-1, 1) * transition_prob, axis=0)
                 * emission_prob[:, output[t]]
             )
         return np.max(delta)  # 最も可能性の高い状態遷移の確率を返す
