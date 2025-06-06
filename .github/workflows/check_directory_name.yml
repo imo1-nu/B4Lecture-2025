@@ -4,6 +4,7 @@ on:
   pull_request_target:
     branches:
       - master
+      - temp_master
     types:
       - opened
     paths-ignore:
@@ -11,6 +12,7 @@ on:
   push:
     branches:
       - master
+      - temp_master
     paths-ignore:
       - 'ex[1-9]/**'
 
