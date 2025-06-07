@@ -7,7 +7,3 @@ export CUDA_VISIBLE_DEVICES=""
 
 # 作成したPythonスクリプトを実行
 python -u main.py --path_to_truth ../test_truth.csv
-python -u main.py --path_to_truth ../test_truth.csv
-python -u main.py --path_to_truth ../test_truth.csv
-python -u main.py --path_to_truth ../test_truth.csv
-python -u main.py --path_to_truth ../test_truth.csv

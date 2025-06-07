@@ -12,10 +12,10 @@ from __future__ import division, print_function
 
 import argparse
 
-import keras_tuner as kt
 import librosa
 import matplotlib.pyplot as plt
 import numpy as np
+import optuna
 import pandas as pd
 import tensorflow as tf
 from sklearn.decomposition import PCA
@@ -56,31 +56,34 @@ def my_MLP(input_shape, output_dim, units1=256, units2=256, dropout1=0.2, dropou
     return model
 
 
-def extract_segments_mfcc(data, n_mfcc=100, n_segments=4):
+def extract_mfcc(data, n_mfcc=100):  # n_mfcc は基本MFCC係数の数
     """
-    音声データからMFCC特徴量を抽出し、指定された数のセグメントに分割する
+    音声データからMFCCとそのデルタ、ダブルデルタ特徴量を抽出する
+    MFCC、デルタMFCC、ダブルデルタMFCCを計算し、時間軸で平均化
+    これら3種の特徴量を連結し、1次元の特徴ベクトルとする
+
     Args:
-        data: 音声データ
-        n_mfcc: MFCCの次元数
-        n_segments: 分割するセグメント数
+        data: 音声波形データのリスト (各要素はNumPy配列)
+        n_mfcc: 抽出する基本MFCC係数の数 (例: 13, 20, 100)
     Returns:
-        segments: 分割されたMFCC特徴量のリスト
+        features_array: 抽出された特徴量のNumPy配列 (形状: num_samples, n_segments * 3 * n_mfcc)
     """
-    features = []
-    for d in data:
-        segments = np.array_split(d, n_segments)
-        for segment in segments:
-            segment *= np.hamming(len(segment))
-        mfcc_segments = np.array(
-            [
-                np.mean(librosa.feature.mfcc(y=segment, n_mfcc=n_mfcc), axis=1)
-                for segment in segments
-            ]
-        )
-        # [n_mfcc * n_segments]の形に変形
-        feature = mfcc_segments.flatten()
-        features.append(feature)
-    return np.array(features)
+    features_list = []
+    for audio_signal in data:
+        mfcc_orig = librosa.feature.mfcc(y=audio_signal, n_mfcc=n_mfcc)
+        # デルタ特徴量を計算 (入力と同じ形状でパディングされて返される)
+        delta_mfcc = librosa.feature.delta(mfcc_orig, width=5)
+        delta2_mfcc = librosa.feature.delta(mfcc_orig, width=5, order=2)
+
+        mean_mfcc_orig = np.mean(mfcc_orig, axis=1)
+        mean_delta_mfcc = np.mean(delta_mfcc, axis=1)
+        mean_delta2_mfcc = np.mean(delta2_mfcc, axis=1)
+
+        # このセグメントの平均化された特徴量を連結
+        feature_vec = np.concatenate((mean_mfcc_orig, mean_delta_mfcc, mean_delta2_mfcc))
+        features_list.append(feature_vec)
+
+    return np.array(features_list)
 
 
 def feature_extraction(train_path_list, test_path_list, cumulative_variance_ratio=0.95):
@@ -100,8 +103,8 @@ def feature_extraction(train_path_list, test_path_list, cumulative_variance_rati
     train_data = list(map(load_data, train_path_list))
     test_data = list(map(load_data, test_path_list))
 
-    train_features = extract_segments_mfcc(train_data)
-    test_features = extract_segments_mfcc(test_data)
+    train_features = extract_mfcc(train_data)
+    test_features = extract_mfcc(test_data)
 
     # PCAを適用して次元削減
     pca = PCA()
@@ -182,43 +185,60 @@ def plot_history(history):
     plt.show()
 
 
-def build_model_for_tuning(hp, input_shape_val, output_dim_val):
+def objective(trial, X_train, Y_train, X_val, Y_val, input_shape, output_dim):
     """
-    Keras Tunerがハイパーパラメータを探索するために呼び出すモデル構築関数
+    Optunaの目的関数
     Args:
-        hp: Keras TunerのHyperParametersオブジェクト
-        input_shape_val: 入力データの形状（特徴量の次元数）
-        output_dim_val: 出力層の次元数（クラス数）
+        trial: OptunaのTrialオブジェクト
+        X_train, Y_train: 学習データ
+        X_val, Y_val: 検証データ
+        input_shape: 入力データの形状
+        output_dim: 出力層の次元数
     Returns:
-        コンパイル済みのKerasモデル
+        検証データの精度 (最大化を目指す)
     """
     model = Sequential()
 
-    # 1層目のDense層のユニット数を探索
-    hp_units_1 = hp.Int("units1", min_value=64, max_value=512, step=64)
-    model.add(Dense(units=hp_units_1, activation="relu", input_dim=input_shape_val))
-    # 1層目のDropout率を探索
-    hp_dropout_1 = hp.Float("dropout1", min_value=0.1, max_value=0.5, step=0.1)
-    model.add(Dropout(rate=hp_dropout_1))
+    # ハイパーパラメータの提案
+    units1 = trial.suggest_int("units1", 64, 512, step=64)
+    dropout1 = trial.suggest_float("dropout1", 0.1, 0.5, step=0.1)
+    units2 = trial.suggest_int("units2", 64, 512, step=64)
+    dropout2 = trial.suggest_float("dropout2", 0.1, 0.5, step=0.1)
+    learning_rate = trial.suggest_categorical("learning_rate", [1e-2, 1e-3, 1e-4, 1e-5])
 
-    # 2層目のDense層のユニット数を探索
-    hp_units_2 = hp.Int("units2", min_value=64, max_value=512, step=64)
-    model.add(Dense(units=hp_units_2, activation="relu"))
-    # 2層目のDropout率を探索
-    hp_dropout_2 = hp.Float("dropout2", min_value=0.1, max_value=0.5, step=0.1)
-    model.add(Dropout(rate=hp_dropout_2))
-
-    model.add(Dense(output_dim_val, activation="softmax"))
-
-    # 学習率を探索
-    hp_learning_rate = hp.Choice("learning_rate", values=[1e-2, 1e-3, 1e-4, 1e-5])
+    model.add(Dense(units=units1, activation="relu", input_dim=input_shape))
+    model.add(Dropout(rate=dropout1))
+    model.add(Dense(units=units2, activation="relu"))
+    model.add(Dropout(rate=dropout2))
+    model.add(Dense(output_dim, activation="softmax"))
 
     model.compile(
-        optimizer=Adam(learning_rate=hp_learning_rate),
+        optimizer=Adam(learning_rate=learning_rate),
         loss="categorical_crossentropy",
         metrics=["accuracy"],
     )
-    return model
+
+    # EarlyStoppingコールバック
+    early_stopping_callback = tf.keras.callbacks.EarlyStopping(
+        monitor="val_loss", patience=10, restore_best_weights=True
+    )
+
+    history = model.fit(
+        X_train,
+        Y_train,
+        epochs=50,  # チューニング時の最大エポック数
+        validation_data=(X_val, Y_val),
+        callbacks=[early_stopping_callback],
+        verbose=0,  # Optunaの試行中はログを抑制することが多い
+    )
+
+    # 検証データの精度を取得 (最後の値、またはEarlyStoppingで最良だった値)
+    val_accuracy = history.history["val_accuracy"][
+        -1
+    ]  # もしrestore_best_weights=Trueならこれが最良
+    # もしくは、より確実に最良のval_accuracyを取得する場合:
+    # val_accuracy = np.max(history.history['val_accuracy'])
+    return val_accuracy
 
 
 def main():
@@ -246,36 +266,29 @@ def main():
     # test_sizeやrandom_stateは適宜調整してください
     X_train_tune, X_val_tune, Y_train_tune, Y_val_tune = train_test_split(X, Y, test_size=0.2)
 
-    # Keras Tunerのセットアップ
-    tuner = kt.RandomSearch(
-        # lambdaを使って追加の引数を渡せるようにする
-        lambda hp: build_model_for_tuning(
-            hp, input_shape_val=X_train_tune.shape[1], output_dim_val=10
+    print("\nStarting hyperparameter tuning with Optuna...")
+    # OptunaのStudyオブジェクトを作成
+    # direction="maximize" で目的関数の戻り値を最大化する
+    study = optuna.create_study(direction="maximize")
+
+    # 最適化の実行
+    # lambdaを使って固定引数を渡す
+    study.optimize(
+        lambda trial: objective(
+            trial,
+            X_train_tune,
+            Y_train_tune,
+            X_val_tune,
+            Y_val_tune,
+            input_shape=X_train_tune.shape[1],
+            output_dim=10,
         ),
-        objective="val_accuracy",  # 最適化の目標（検証データの精度）
-        max_trials=10,  # 試行するハイパーパラメータの組み合わせの最大数
-        executions_per_trial=1,  # 各試行でモデルを学習する回数
-        directory="keras_tuner_dir",  # チューニング結果を保存するディレクトリ
-        project_name="audio_classification_tuning",  # プロジェクト名
+        n_trials=10,  # 試行するハイパーパラメータの組み合わせの最大数
+        # n_jobs=-1 # 並列実行する場合 (環境によっては設定)
     )
-
-    print("\nStarting hyperparameter tuning...")
-    # EarlyStoppingコールバック: 検証損失が改善しなくなったら学習を早期終了
-    early_stopping_callback = tf.keras.callbacks.EarlyStopping(
-        monitor="val_loss", patience=10, restore_best_weights=True
-    )
-
-    tuner.search(
-        X_train_tune,
-        Y_train_tune,
-        epochs=50,  # チューニング時の最大エポック数 (EarlyStoppingで制御される)
-        validation_data=(X_val_tune, Y_val_tune),
-        callbacks=[early_stopping_callback],
-        verbose=1,
-    )  # verbose=2にするとログが簡潔になります
 
     # 最適なハイパーパラメータの取得
-    best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
+    best_hps = study.best_params
 
     print(f"""
     Hyperparameter search complete.
