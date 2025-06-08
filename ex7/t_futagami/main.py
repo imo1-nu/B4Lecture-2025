@@ -18,7 +18,6 @@ import numpy as np
 import optuna
 import pandas as pd
 import tensorflow as tf
-from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.model_selection import KFold
 from tensorflow.keras import regularizers
@@ -61,7 +60,7 @@ def my_MLP(
     return model
 
 
-def extract_mfcc(data, n_mfcc=100, n_segments=4):  # n_mfcc は基本MFCC係数の数
+def extract_mfcc(data, n_mfcc=13, n_segments=4):  # n_mfcc は基本MFCC係数の数
     """
     音声データからMFCCとそのデルタ、ダブルデルタ特徴量を抽出する
     MFCC、デルタMFCC、ダブルデルタMFCCを計算し、時間軸で平均化
@@ -133,16 +132,6 @@ def feature_extraction(
 
     train_features = extract_mfcc(train_data)
     test_features = extract_mfcc(test_data)
-
-    # PCAを適用して次元削減
-    pca = PCA()
-    pca.fit(train_features)
-    contribution_ratios = pca.explained_variance_ratio_
-    cumulative_variance_ratio_ = np.cumsum(contribution_ratios)
-    n_components = np.argmax(cumulative_variance_ratio_ >= cumulative_variance_ratio) + 1
-    pca_final = PCA(n_components=n_components)
-    train_features = pca_final.fit_transform(train_features)
-    test_features = pca_final.transform(test_features)
 
     return train_features, test_features
 
@@ -230,7 +219,7 @@ def objective(trial, X, Y, input_shape, output_dim):
     units2 = trial.suggest_int("units2", 64, 512, step=64)
     dropout2 = trial.suggest_float("dropout2", 0.1, 0.5, step=0.1)
     learning_rate = trial.suggest_categorical("learning_rate", [1e-2, 1e-3, 1e-4, 1e-5])
-    l2_rate = trial.suggest_float("l2_rate", 1e-3, 1e-1, log=True)
+    l2_rate = trial.suggest_float("l2_rate", 1e-5, 1e-1, log=True)
 
     # EarlyStoppingコールバック
     early_stopping_callback = tf.keras.callbacks.EarlyStopping(
