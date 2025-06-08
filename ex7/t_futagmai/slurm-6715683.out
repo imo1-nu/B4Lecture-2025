@@ -1,0 +1,13 @@
+Number of features: 64
+
+Starting hyperparameter tuning with Optuna...
+[I 2025-06-09 04:48:47,539] A new study created in memory with name: no-name-ed1408d5-6b37-4998-91c2-008cc26fdae3
+2025-06-09 04:48:47.763173: E tensorflow/stream_executor/cuda/cuda_driver.cc:271] failed call to cuInit: CUDA_ERROR_NO_DEVICE: no CUDA-capable device is detected
+2025-06-09 04:48:47.763256: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:169] retrieving CUDA diagnostic information for host: aventador
+2025-06-09 04:48:47.763271: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:176] hostname: aventador
+2025-06-09 04:48:47.763458: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:200] libcuda reported version is: 560.35.3
+2025-06-09 04:48:47.763877: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:204] kernel reported version is: 560.35.3
+2025-06-09 04:48:47.763891: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:310] kernel version seems to match DSO: 560.35.3
+2025-06-09 04:48:47.764290: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+[I 2025-06-09 04:49:47,239] Trial 0 finished with value: 0.9203703999519348 and parameters: {'units1': 64, 'dropout1': 0.1, 'units2': 128, 'dropout2': 0.5, 'learning_rate': 0.0001, 'l2_rate': 4.608589352805149e-05}. Best is trial 0 with value: 0.9203703999519348.

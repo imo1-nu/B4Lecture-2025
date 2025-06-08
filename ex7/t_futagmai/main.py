@@ -4,8 +4,8 @@
 """
 B4輪講最終課題 パターン認識に挑戦してみよう
 ベースラインスクリプト
-特徴量；MFCCの平均（0次項含まず）
-識別器；MLP
+特徴量: MFCCの平均（0次項含まず）
+識別器: MLP
 """
 
 from __future__ import division, print_function
@@ -20,53 +20,59 @@ import pandas as pd
 import tensorflow as tf
 from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score, confusion_matrix
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
+from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Activation, Dense, Dropout
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import to_categorical
 
 
-def my_MLP(input_shape, output_dim, units1=256, units2=256, dropout1=0.2, dropout2=0.2):
+def my_MLP(
+    input_shape, output_dim, units1=256, units2=256, dropout1=0.2, dropout2=0.2, l2_rate=0.01
+):
     """
     MLPモデルの構築
     Args:
         input_shape: 入力の形
         output_dim: 出力次元
+        units1: 1層目のユニット数
+        units2: 2層目のユニット数
+        dropout1: 1層目のドロップアウト率
+        dropout2: 2層目のドロップアウト率
+        l2_rate: L2正則化の係数 (デフォルトは0.01)
     Returns:
         model: 定義済みモデル
     """
 
     model = Sequential()
 
-    model.add(Dense(units1, input_dim=input_shape))
+    model.add(Dense(units1, input_dim=input_shape, kernel_regularizer=regularizers.l2(l2_rate)))
     model.add(Activation("relu"))
     model.add(Dropout(dropout1))
 
-    model.add(Dense(units2))
+    model.add(Dense(units2, kernel_regularizer=regularizers.l2(l2_rate)))
     model.add(Activation("relu"))
     model.add(Dropout(dropout2))
 
     model.add(Dense(output_dim))
     model.add(Activation("softmax"))
 
-    # モデル構成の表示
-    model.summary()
-
     return model
 
 
-def extract_mfcc(data, n_mfcc=100):  # n_mfcc は基本MFCC係数の数
+def extract_mfcc(data, n_mfcc=100, n_segments=4):  # n_mfcc は基本MFCC係数の数
     """
     音声データからMFCCとそのデルタ、ダブルデルタ特徴量を抽出する
     MFCC、デルタMFCC、ダブルデルタMFCCを計算し、時間軸で平均化
-    これら3種の特徴量を連結し、1次元の特徴ベクトルとする
+    これら全ての特徴量を連結し、1次元の特徴ベクトルとする
 
     Args:
-        data: 音声波形データのリスト (各要素はNumPy配列)
+        data_sr_tuples: (音声波形データ, サンプリングレート) のタプルのリスト
         n_mfcc: 抽出する基本MFCC係数の数 (例: 13, 20, 100)
+        n_segments: 音声信号を分割するセグメント数 (デフォルトは4)
     Returns:
-        features_array: 抽出された特徴量のNumPy配列 (形状: num_samples, n_segments * 3 * n_mfcc)
+        features_array: 抽出された特徴量のNumPy配列
     """
     features_list = []
     for audio_signal in data:
@@ -75,18 +81,28 @@ def extract_mfcc(data, n_mfcc=100):  # n_mfcc は基本MFCC係数の数
         delta_mfcc = librosa.feature.delta(mfcc_orig, width=5)
         delta2_mfcc = librosa.feature.delta(mfcc_orig, width=5, order=2)
 
-        mean_mfcc_orig = np.mean(mfcc_orig, axis=1)
-        mean_delta_mfcc = np.mean(delta_mfcc, axis=1)
-        mean_delta2_mfcc = np.mean(delta2_mfcc, axis=1)
+        # 0次MFCCは除外
+        mfcc_orig = mfcc_orig[1:, :]  # 0次MFCCを除外
+        delta_mfcc = delta_mfcc[1:, :]  # 0次デルタMFCCを除外
+        delta2_mfcc = delta2_mfcc[1:, :]  # 0次ダブルデルタMFCCを除外
 
-        # このセグメントの平均化された特徴量を連結
-        feature_vec = np.concatenate((mean_mfcc_orig, mean_delta_mfcc, mean_delta2_mfcc))
-        features_list.append(feature_vec)
+        features = []
+        # 音声信号をn_segments個のセグメントに分割して平均を取る
+        for feature_all in [mfcc_orig, delta_mfcc, delta2_mfcc]:
+            segments_feature = np.array_split(feature_all, n_segments, axis=1)
+            segment_means = [np.mean(segment, axis=1) for segment in segments_feature]
+            features.append(np.concatenate(segment_means))
+
+        # 各特徴量を連結して1次元の特徴ベクトルを作成
+        mfcc_feature_vec = np.concatenate(features)
+        features_list.append(mfcc_feature_vec)
 
     return np.array(features_list)
 
 
-def feature_extraction(train_path_list, test_path_list, cumulative_variance_ratio=0.95):
+def feature_extraction(
+    train_path_list, test_path_list, cumulative_variance_ratio=0.98, noise_scale=-1
+):
     """
     wavファイルのリストから特徴抽出を行い，リストで返す
     扱う特徴量はMFCC13次元の平均（0次は含めない）
@@ -94,6 +110,7 @@ def feature_extraction(train_path_list, test_path_list, cumulative_variance_rati
         train_path_list: 学習データのwavファイルリスト
         test_path_list: テストデータのwavファイルリスト
         cumulative_variance_ratio: 累積寄与率の閾値（デフォルトは0.9）
+        noise_scale: ホワイトノイズの標準偏差を信号の標準偏差の一定割合にする
     Returns:
         features: 特徴量
     """
@@ -102,6 +119,17 @@ def feature_extraction(train_path_list, test_path_list, cumulative_variance_rati
 
     train_data = list(map(load_data, train_path_list))
     test_data = list(map(load_data, test_path_list))
+
+    if noise_scale > 0:
+        data_whitenoise = []
+        for signal in train_data:
+            signal_std = np.std(signal)
+            noise_std = noise_scale * signal_std
+
+            white_noise = np.random.normal(0, noise_std, len(signal))
+            data_whitenoise.append(signal + white_noise)
+
+        train_data.extend(data_whitenoise)
 
     train_features = extract_mfcc(train_data)
     test_features = extract_mfcc(test_data)
@@ -185,60 +213,69 @@ def plot_history(history):
     plt.show()
 
 
-def objective(trial, X_train, Y_train, X_val, Y_val, input_shape, output_dim):
+def objective(trial, X, Y, input_shape, output_dim):
     """
     Optunaの目的関数
     Args:
         trial: OptunaのTrialオブジェクト
-        X_train, Y_train: 学習データ
-        X_val, Y_val: 検証データ
+        X, Y: 学習データ
         input_shape: 入力データの形状
         output_dim: 出力層の次元数
     Returns:
         検証データの精度 (最大化を目指す)
     """
-    model = Sequential()
-
     # ハイパーパラメータの提案
     units1 = trial.suggest_int("units1", 64, 512, step=64)
     dropout1 = trial.suggest_float("dropout1", 0.1, 0.5, step=0.1)
     units2 = trial.suggest_int("units2", 64, 512, step=64)
     dropout2 = trial.suggest_float("dropout2", 0.1, 0.5, step=0.1)
     learning_rate = trial.suggest_categorical("learning_rate", [1e-2, 1e-3, 1e-4, 1e-5])
-
-    model.add(Dense(units=units1, activation="relu", input_dim=input_shape))
-    model.add(Dropout(rate=dropout1))
-    model.add(Dense(units=units2, activation="relu"))
-    model.add(Dropout(rate=dropout2))
-    model.add(Dense(output_dim, activation="softmax"))
-
-    model.compile(
-        optimizer=Adam(learning_rate=learning_rate),
-        loss="categorical_crossentropy",
-        metrics=["accuracy"],
-    )
+    l2_rate = trial.suggest_float("l2_rate", 1e-3, 1e-1, log=True)
 
     # EarlyStoppingコールバック
     early_stopping_callback = tf.keras.callbacks.EarlyStopping(
         monitor="val_loss", patience=10, restore_best_weights=True
     )
 
-    history = model.fit(
-        X_train,
-        Y_train,
-        epochs=50,  # チューニング時の最大エポック数
-        validation_data=(X_val, Y_val),
-        callbacks=[early_stopping_callback],
-        verbose=0,  # Optunaの試行中はログを抑制することが多い
-    )
+    kf = KFold(n_splits=5, shuffle=True)  # K=5
+    val_accuracies = []
 
-    # 検証データの精度を取得 (最後の値、またはEarlyStoppingで最良だった値)
-    val_accuracy = history.history["val_accuracy"][
-        -1
-    ]  # もしrestore_best_weights=Trueならこれが最良
-    # もしくは、より確実に最良のval_accuracyを取得する場合:
-    # val_accuracy = np.max(history.history['val_accuracy'])
-    return val_accuracy
+    for train_index, val_index in kf.split(X, Y):
+        X_train_fold, X_val_fold = X[train_index], X[val_index]
+        Y_train_fold, Y_val_fold = Y[train_index], Y[val_index]
+
+        # 各フォールドでモデルを構築・コンパイル
+        model = my_MLP(
+            input_shape=input_shape,
+            output_dim=output_dim,
+            units1=units1,
+            units2=units2,
+            dropout1=dropout1,
+            dropout2=dropout2,
+            l2_rate=l2_rate,
+        )
+
+        model.compile(
+            optimizer=Adam(learning_rate=learning_rate),
+            loss="categorical_crossentropy",
+            metrics=["accuracy"],
+        )
+
+        history = model.fit(
+            X_train_fold,
+            Y_train_fold,
+            epochs=50,  # チューニング時の最大エポック数
+            validation_data=(X_val_fold, Y_val_fold),
+            callbacks=[early_stopping_callback],
+            verbose=0,  # Optunaの試行中はログを抑制
+        )
+
+        # 検証データの精度を取得
+        val_accuracy = history.history["val_accuracy"][-1]
+        val_accuracies.append(val_accuracy)
+
+    # K個のフォールドの最小精度を返す
+    return np.min(val_accuracies)
 
 
 def main():
@@ -253,7 +290,9 @@ def main():
 
     # 学習データの特徴抽出
     X, X_test = feature_extraction(
-        path_to_e7 + training["path"].values, path_to_e7 + test["path"].values
+        path_to_e7 + training["path"].values,
+        path_to_e7 + test["path"].values,
+        noise_scale=0.2,
     )
 
     # 特徴量の次元数を表示
@@ -261,10 +300,7 @@ def main():
 
     # 正解ラベルをone-hotベクトルに変換 ex. 3 -> [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
     Y = to_categorical(y=training["label"], num_classes=10)
-
-    # ハイパーパラメータチューニング用のデータ分割 (学習データの一部を使用)
-    # test_sizeやrandom_stateは適宜調整してください
-    X_train_tune, X_val_tune, Y_train_tune, Y_val_tune = train_test_split(X, Y, test_size=0.2)
+    Y = np.tile(Y, (2, 1))  # ホワイトノイズを追加したのでラベルも2倍にする
 
     print("\nStarting hyperparameter tuning with Optuna...")
     # OptunaのStudyオブジェクトを作成
@@ -276,11 +312,9 @@ def main():
     study.optimize(
         lambda trial: objective(
             trial,
-            X_train_tune,
-            Y_train_tune,
-            X_val_tune,
-            Y_val_tune,
-            input_shape=X_train_tune.shape[1],
+            X,
+            Y,
+            input_shape=X.shape[1],
             output_dim=10,
         ),
         n_trials=10,  # 試行するハイパーパラメータの組み合わせの最大数
@@ -297,6 +331,7 @@ def main():
     Optimal units for layer 2: {best_hps.get("units2")}
     Optimal dropout for layer 2: {best_hps.get("dropout2")}
     Optimal learning rate: {best_hps.get("learning_rate")}
+    Optimal L2 regularization rate: {best_hps.get("l2_rate")}
     """)
 
     # 全学習データでモデルを再学習
@@ -308,12 +343,20 @@ def main():
         units2=best_hps.get("units2"),
         dropout1=best_hps.get("dropout1"),
         dropout2=best_hps.get("dropout2"),
+        l2_rate=best_hps.get("l2_rate"),
     )
-    model.compile(loss="categorical_crossentropy", optimizer=Adam(lr=1e-4), metrics=["accuracy"])
-    history = model.fit(X, Y, batch_size=32, epochs=500, verbose=1)
+    # モデル構成の表示
+    model.summary()
+
+    model.compile(
+        loss="categorical_crossentropy",
+        optimizer=Adam(lr=best_hps.get("learning_rate")),
+        metrics=["accuracy"],
+    )
+    history = model.fit(X, Y, batch_size=32, epochs=100, verbose=1)
 
     # モデル構成，学習した重みの保存
-    model.save("keras_model/my_model.h5")
+    model.save("my_model.h5")
 
     # 最終モデルの学習履歴をプロット
     plot_history(history)
