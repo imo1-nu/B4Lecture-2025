@@ -29,7 +29,13 @@ from tensorflow.keras.utils import to_categorical
 
 
 def my_MLP(
-    input_shape, output_dim, units1=256, units2=256, dropout1=0.2, dropout2=0.2, l2_rate=0.01
+    input_shape,
+    output_dim,
+    units1=256,
+    units2=256,
+    dropout1=0.2,
+    dropout2=0.2,
+    l2_rate=0.01,
 ):
     """
     MLPモデルの構築
@@ -47,7 +53,11 @@ def my_MLP(
 
     model = Sequential()
 
-    model.add(Dense(units1, input_dim=input_shape, kernel_regularizer=regularizers.l2(l2_rate)))
+    model.add(
+        Dense(
+            units1, input_dim=input_shape, kernel_regularizer=regularizers.l2(l2_rate)
+        )
+    )
     model.add(Activation("relu"))
     model.add(Dropout(dropout1))
 
@@ -115,7 +125,8 @@ def feature_extraction(
         features: 特徴量
     """
 
-    load_data = lambda path: librosa.load(path)[0]
+    def load_data(path):
+        return librosa.load(path)[0]
 
     train_data = list(map(load_data, train_path_list))
     test_data = list(map(load_data, test_path_list))
@@ -139,7 +150,9 @@ def feature_extraction(
     pca.fit(train_features)
     contribution_ratios = pca.explained_variance_ratio_
     cumulative_variance_ratio_ = np.cumsum(contribution_ratios)
-    n_components = np.argmax(cumulative_variance_ratio_ >= cumulative_variance_ratio) + 1
+    n_components = (
+        np.argmax(cumulative_variance_ratio_ >= cumulative_variance_ratio) + 1
+    )
     pca_final = PCA(n_components=n_components)
     train_features = pca_final.fit_transform(train_features)
     test_features = pca_final.transform(test_features)
@@ -302,7 +315,9 @@ def objective(trial, X, Y, input_shape, output_dim):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path_to_truth", type=str, help="テストデータの正解ファイルCSVのパス")
+    parser.add_argument(
+        "--path_to_truth", type=str, help="テストデータの正解ファイルCSVのパス"
+    )
     args = parser.parse_args()
     path_to_e7 = "../"
 
@@ -346,7 +361,8 @@ def main():
     # 最適なハイパーパラメータの取得
     best_hps = study.best_params
 
-    print(f"""
+    print(
+        f"""
     Hyperparameter search complete.
     Optimal units for layer 1: {best_hps.get("units1")}
     Optimal dropout for layer 1: {best_hps.get("dropout1")}
@@ -354,7 +370,8 @@ def main():
     Optimal dropout for layer 2: {best_hps.get("dropout2")}
     Optimal learning rate: {best_hps.get("learning_rate")}
     Optimal L2 regularization rate: {best_hps.get("l2_rate")}
-    """)
+    """
+    )
 
     # 全学習データでモデルを再学習
     print("\nTraining on full training data...")

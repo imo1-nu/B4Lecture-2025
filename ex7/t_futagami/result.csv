@@ -71,7 +71,7 @@ dataset/test/nicolas_18.wav,2
 dataset/test/nicolas_19.wav,2
 dataset/test/nicolas_20.wav,1
 dataset/test/nicolas_21.wav,1
-dataset/test/nicolas_22.wav,1
+dataset/test/nicolas_22.wav,9
 dataset/test/nicolas_23.wav,1
 dataset/test/nicolas_24.wav,1
 dataset/test/nicolas_25.wav,0
@@ -201,7 +201,7 @@ dataset/test/yweweler_48.wav,0
 dataset/test/yweweler_49.wav,0
 dataset/test/george_0.wav,0
 dataset/test/george_1.wav,0
-dataset/test/george_2.wav,6
+dataset/test/george_2.wav,0
 dataset/test/george_3.wav,0
 dataset/test/george_4.wav,0
 dataset/test/george_5.wav,3
@@ -216,7 +216,7 @@ dataset/test/george_13.wav,1
 dataset/test/george_14.wav,1
 dataset/test/george_15.wav,2
 dataset/test/george_16.wav,2
-dataset/test/george_17.wav,9
+dataset/test/george_17.wav,0
 dataset/test/george_18.wav,2
 dataset/test/george_19.wav,2
 dataset/test/george_20.wav,5
@@ -278,7 +278,7 @@ dataset/test/lucas_25.wav,9
 dataset/test/lucas_26.wav,9
 dataset/test/lucas_27.wav,9
 dataset/test/lucas_28.wav,9
-dataset/test/lucas_29.wav,9
+dataset/test/lucas_29.wav,7
 dataset/test/lucas_30.wav,6
 dataset/test/lucas_31.wav,6
 dataset/test/lucas_32.wav,6
