@@ -18,6 +18,7 @@ import numpy as np
 import optuna
 import pandas as pd
 import tensorflow as tf
+from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.model_selection import KFold
 from tensorflow.keras import regularizers
@@ -60,7 +61,7 @@ def my_MLP(
     return model
 
 
-def extract_mfcc(data, n_mfcc=13, n_segments=4):  # n_mfcc は基本MFCC係数の数
+def extract_mfcc(data, n_mfcc=100, n_segments=4):  # n_mfcc は基本MFCC係数の数
     """
     音声データからMFCCとそのデルタ、ダブルデルタ特徴量を抽出する
     MFCC、デルタMFCC、ダブルデルタMFCCを計算し、時間軸で平均化
@@ -100,7 +101,7 @@ def extract_mfcc(data, n_mfcc=13, n_segments=4):  # n_mfcc は基本MFCC係数�
 
 
 def feature_extraction(
-    train_path_list, test_path_list, cumulative_variance_ratio=0.98, noise_scale=-1
+    train_path_list, test_path_list, cumulative_variance_ratio=0.99, noise_scale=-1
 ):
     """
     wavファイルのリストから特徴抽出を行い，リストで返す
@@ -133,6 +134,16 @@ def feature_extraction(
     train_features = extract_mfcc(train_data)
     test_features = extract_mfcc(test_data)
 
+    # PCAを適用して次元削減
+    pca = PCA()
+    pca.fit(train_features)
+    contribution_ratios = pca.explained_variance_ratio_
+    cumulative_variance_ratio_ = np.cumsum(contribution_ratios)
+    n_components = np.argmax(cumulative_variance_ratio_ >= cumulative_variance_ratio) + 1
+    pca_final = PCA(n_components=n_components)
+    train_features = pca_final.fit_transform(train_features)
+    test_features = pca_final.transform(test_features)
+
     return train_features, test_features
 
 
@@ -149,12 +160,34 @@ def plot_confusion_matrix(predict, ground_truth, title=None, cmap=plt.cm.Blues):
     """
 
     cm = confusion_matrix(predict, ground_truth)
-    plt.figure()
-    plt.imshow(cm, interpolation="nearest", cmap=cmap)
+    # 各真のラベルに対する予測の割合を計算 (列方向の合計が1になるように正規化)
+    cm_normalized = cm.astype("float") / cm.sum(axis=0)[:, np.newaxis]
+
+    plt.figure(figsize=(8, 6))
+    plt.imshow(cm_normalized, interpolation="nearest", cmap=cmap, vmin=0, vmax=1)
     plt.title(title)
     plt.colorbar()
+
+    # x軸とy軸のラベルを設定
+    tick_marks = np.arange(10)  # 0から9までのラベル
+    plt.xticks(tick_marks, tick_marks)
+    plt.yticks(tick_marks, tick_marks)
+
     plt.xlabel("Ground truth")
     plt.ylabel("Predicted")
+
+    # 各セルに確率を表示
+    thresh = cm_normalized.max() / 2.0
+    for i in range(cm_normalized.shape[0]):
+        for j in range(cm_normalized.shape[1]):
+            plt.text(
+                j,
+                i,
+                format(cm_normalized[i, j], ".2f"),
+                horizontalalignment="center",
+                color="white" if cm_normalized[i, j] > thresh else "black",
+            )
+
     plt.tight_layout()
     plt.savefig("result/cm.png", transparent=True)
     plt.show()
@@ -263,8 +296,8 @@ def objective(trial, X, Y, input_shape, output_dim):
         val_accuracy = history.history["val_accuracy"][-1]
         val_accuracies.append(val_accuracy)
 
-    # K個のフォールドの最小精度を返す
-    return np.min(val_accuracies)
+    # K個のフォールドの平均精度を返す
+    return np.mean(val_accuracies)
 
 
 def main():
@@ -365,7 +398,7 @@ def main():
         plot_confusion_matrix(
             predicted_values,
             truth_values,
-            title=f"Acc. {test_accuracy * 100}%",
+            title=f"Acc. {round(test_accuracy * 100, 4)}%",
         )
         print("Test accuracy: ", test_accuracy)
 
