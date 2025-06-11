@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-B4輪講最終課題 パターン認識に挑戦してみよう
+B4輪講最終課題 パターン認識に挑戦してみよう.
 ベースラインスクリプト
 特徴量: MFCCの平均（0次項含まず）
 識別器: MLP
@@ -38,7 +38,8 @@ def my_MLP(
     l2_rate=0.01,
 ):
     """
-    MLPモデルの構築
+    MLPモデルの構築.
+
     Args:
         input_shape: 入力の形
         output_dim: 出力次元
@@ -73,9 +74,9 @@ def my_MLP(
 
 def extract_mfcc(data, n_mfcc=100, n_segments=4):  # n_mfcc は基本MFCC係数の数
     """
-    音声データからMFCCとそのデルタ、ダブルデルタ特徴量を抽出する
-    MFCC、デルタMFCC、ダブルデルタMFCCを計算し、時間軸で平均化
-    これら全ての特徴量を連結し、1次元の特徴ベクトルとする
+    音声データからMFCCとそのデルタ、ダブルデルタ特徴量を抽出する.
+    MFCC、デルタMFCC、ダブルデルタMFCCを計算し、時間軸で平均化.
+    これら全ての特徴量を連結し、1次元の特徴ベクトルとする.
 
     Args:
         data_sr_tuples: (音声波形データ, サンプリングレート) のタプルのリスト
@@ -114,8 +115,9 @@ def feature_extraction(
     train_path_list, test_path_list, cumulative_variance_ratio=0.99, noise_scale=-1
 ):
     """
-    wavファイルのリストから特徴抽出を行い，リストで返す
+    wavファイルのリストから特徴抽出を行い，リストで返す.
     扱う特徴量はMFCC13次元の平均（0次は含めない）
+
     Args:
         train_path_list: 学習データのwavファイルリスト
         test_path_list: テストデータのwavファイルリスト
@@ -162,7 +164,8 @@ def feature_extraction(
 
 def plot_confusion_matrix(predict, ground_truth, title=None, cmap=plt.cm.Blues):
     """
-    予測結果の混合行列をプロット
+    予測結果の混合行列をプロット.
+
     Args:
         predict: 予測結果
         ground_truth: 正解ラベル
@@ -208,7 +211,8 @@ def plot_confusion_matrix(predict, ground_truth, title=None, cmap=plt.cm.Blues):
 
 def write_result(paths, outputs):
     """
-    結果をcsvファイルで保存する
+    結果をcsvファイルで保存する.
+
     Args:
         paths: テストする音声ファイルリスト
         outputs:
@@ -224,8 +228,15 @@ def write_result(paths, outputs):
 
 
 def plot_history(history):
-    # 学習過程をグラフで出力
-    # print(history.history.keys())
+    """
+    学習履歴をプロットする.
+
+    Args:
+        history: Kerasの学習履歴オブジェクト
+    Returns:
+        Nothing
+    """
+
     acc = history.history["accuracy"]
     loss = history.history["loss"]
     epochs = range(1, len(acc) + 1)
@@ -250,7 +261,8 @@ def plot_history(history):
 
 def objective(trial, X, Y, input_shape, output_dim):
     """
-    Optunaの目的関数
+    Optunaの目的関数.
+
     Args:
         trial: OptunaのTrialオブジェクト
         X, Y: 学習データ
@@ -259,6 +271,7 @@ def objective(trial, X, Y, input_shape, output_dim):
     Returns:
         検証データの精度 (最大化を目指す)
     """
+
     # ハイパーパラメータの提案
     units1 = trial.suggest_int("units1", 64, 512, step=64)
     dropout1 = trial.suggest_float("dropout1", 0.1, 0.5, step=0.1)
@@ -314,6 +327,18 @@ def objective(trial, X, Y, input_shape, output_dim):
 
 
 def main():
+    """
+    メイン関数.
+    1. 引数のパース
+    2. データの読み込み
+    3. 特徴量の抽出
+    4. Optunaによるハイパーパラメータのチューニング
+    5. 最適なハイパーパラメータでモデルを再学習
+    6. 学習履歴のプロット
+    7. テストデータに対する予測と結果の保存
+    8. 正解ファイルが指定されていれば評価を行う
+    """
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--path_to_truth", type=str, help="テストデータの正解ファイルCSVのパス"
