@@ -3,7 +3,7 @@
 
 """
 B4輪講最終課題 パターン認識に挑戦してみよう.
-ベースラインスクリプト
+
 特徴量: MFCCの平均（0次項含まず）
 識別器: MLP
 """
@@ -50,14 +50,9 @@ def my_MLP(
     Returns:
         model: 定義済みモデル
     """
-
     model = Sequential()
 
-    model.add(
-        Dense(
-            units1, input_dim=input_shape, kernel_regularizer=regularizers.l2(l2_rate)
-        )
-    )
+    model.add(Dense(units1, input_dim=input_shape, kernel_regularizer=regularizers.l2(l2_rate)))
     model.add(Activation("relu"))
     model.add(Dropout(dropout1))
 
@@ -151,9 +146,7 @@ def feature_extraction(
     pca.fit(train_features)
     contribution_ratios = pca.explained_variance_ratio_
     cumulative_variance_ratio_ = np.cumsum(contribution_ratios)
-    n_components = (
-        np.argmax(cumulative_variance_ratio_ >= cumulative_variance_ratio) + 1
-    )
+    n_components = np.argmax(cumulative_variance_ratio_ >= cumulative_variance_ratio) + 1
     pca_final = PCA(n_components=n_components)
     train_features = pca_final.fit_transform(train_features)
     test_features = pca_final.transform(test_features)
@@ -172,7 +165,6 @@ def plot_confusion_matrix(predict, ground_truth, title=None, cmap=plt.cm.Blues):
     Returns:
         Nothing
     """
-
     cm = confusion_matrix(predict, ground_truth)
     # 各真のラベルに対する予測の割合を計算 (列方向の合計が1になるように正規化)
     cm_normalized = cm.astype("float") / cm.sum(axis=0)[:, np.newaxis]
@@ -216,7 +208,6 @@ def write_result(paths, outputs):
     Returns:
         Nothing
     """
-
     with open("result.csv", "w") as f:
         f.write("path,output\n")
         assert len(paths) == len(outputs)
@@ -232,7 +223,6 @@ def plot_history(history):
     Returns:
         Nothing
     """
-
     acc = history.history["accuracy"]
     loss = history.history["loss"]
     epochs = range(1, len(acc) + 1)
@@ -266,7 +256,6 @@ def objective(trial, X, Y, input_shape, output_dim):
     Returns:
         検証データの精度 (最大化を目指す)
     """
-
     # ハイパーパラメータの提案
     units1 = trial.suggest_int("units1", 64, 512, step=64)
     dropout1 = trial.suggest_float("dropout1", 0.1, 0.5, step=0.1)
@@ -334,11 +323,8 @@ def main():
     7. テストデータに対する予測と結果の保存
     8. 正解ファイルが指定されていれば評価を行う
     """
-
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--path_to_truth", type=str, help="テストデータの正解ファイルCSVのパス"
-    )
+    parser.add_argument("--path_to_truth", type=str, help="テストデータの正解ファイルCSVのパス")
     args = parser.parse_args()
     path_to_e7 = "../"
 
