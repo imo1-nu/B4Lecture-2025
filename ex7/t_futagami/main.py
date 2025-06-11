@@ -39,6 +39,7 @@ def my_MLP(
 ):
     """
     MLPモデルの構築.
+
     Args:
         input_shape: 入力の形
         output_dim: 出力次元
@@ -52,7 +53,11 @@ def my_MLP(
     """
     model = Sequential()
 
-    model.add(Dense(units1, input_dim=input_shape, kernel_regularizer=regularizers.l2(l2_rate)))
+    model.add(
+        Dense(
+            units1, input_dim=input_shape, kernel_regularizer=regularizers.l2(l2_rate)
+        )
+    )
     model.add(Activation("relu"))
     model.add(Dropout(dropout1))
 
@@ -146,7 +151,9 @@ def feature_extraction(
     pca.fit(train_features)
     contribution_ratios = pca.explained_variance_ratio_
     cumulative_variance_ratio_ = np.cumsum(contribution_ratios)
-    n_components = np.argmax(cumulative_variance_ratio_ >= cumulative_variance_ratio) + 1
+    n_components = (
+        np.argmax(cumulative_variance_ratio_ >= cumulative_variance_ratio) + 1
+    )
     pca_final = PCA(n_components=n_components)
     train_features = pca_final.fit_transform(train_features)
     test_features = pca_final.transform(test_features)
@@ -157,6 +164,7 @@ def feature_extraction(
 def plot_confusion_matrix(predict, ground_truth, title=None, cmap=plt.cm.Blues):
     """
     予測結果の混合行列をプロット.
+
     Args:
         predict: 予測結果
         ground_truth: 正解ラベル
@@ -202,6 +210,7 @@ def plot_confusion_matrix(predict, ground_truth, title=None, cmap=plt.cm.Blues):
 def write_result(paths, outputs):
     """
     結果をcsvファイルで保存する.
+
     Args:
         paths: テストする音声ファイルリスト
         outputs:
@@ -218,6 +227,7 @@ def write_result(paths, outputs):
 def plot_history(history):
     """
     学習履歴をプロットする.
+
     Args:
         history: Kerasの学習履歴オブジェクト
     Returns:
@@ -248,6 +258,7 @@ def plot_history(history):
 def objective(trial, X, Y, input_shape, output_dim):
     """
     Optunaの目的関数.
+
     Args:
         trial: OptunaのTrialオブジェクト
         X, Y: 学習データ
@@ -324,7 +335,9 @@ def main():
     8. 正解ファイルが指定されていれば評価を行う
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path_to_truth", type=str, help="テストデータの正解ファイルCSVのパス")
+    parser.add_argument(
+        "--path_to_truth", type=str, help="テストデータの正解ファイルCSVのパス"
+    )
     args = parser.parse_args()
     path_to_e7 = "../"
 
