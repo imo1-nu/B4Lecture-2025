@@ -39,7 +39,6 @@ def my_MLP(
 ):
     """
     MLPモデルの構築.
-
     Args:
         input_shape: 入力の形
         output_dim: 出力次元
@@ -75,9 +74,9 @@ def my_MLP(
 def extract_mfcc(data, n_mfcc=100, n_segments=4):  # n_mfcc は基本MFCC係数の数
     """
     音声データからMFCCとそのデルタ、ダブルデルタ特徴量を抽出する.
+
     MFCC、デルタMFCC、ダブルデルタMFCCを計算し、時間軸で平均化.
     これら全ての特徴量を連結し、1次元の特徴ベクトルとする.
-
     Args:
         data_sr_tuples: (音声波形データ, サンプリングレート) のタプルのリスト
         n_mfcc: 抽出する基本MFCC係数の数 (例: 13, 20, 100)
@@ -116,8 +115,8 @@ def feature_extraction(
 ):
     """
     wavファイルのリストから特徴抽出を行い，リストで返す.
-    扱う特徴量はMFCC13次元の平均（0次は含めない）
 
+    扱う特徴量はMFCC13次元の平均（0次は含めない）
     Args:
         train_path_list: 学習データのwavファイルリスト
         test_path_list: テストデータのwavファイルリスト
@@ -165,7 +164,6 @@ def feature_extraction(
 def plot_confusion_matrix(predict, ground_truth, title=None, cmap=plt.cm.Blues):
     """
     予測結果の混合行列をプロット.
-
     Args:
         predict: 予測結果
         ground_truth: 正解ラベル
@@ -212,7 +210,6 @@ def plot_confusion_matrix(predict, ground_truth, title=None, cmap=plt.cm.Blues):
 def write_result(paths, outputs):
     """
     結果をcsvファイルで保存する.
-
     Args:
         paths: テストする音声ファイルリスト
         outputs:
@@ -230,7 +227,6 @@ def write_result(paths, outputs):
 def plot_history(history):
     """
     学習履歴をプロットする.
-
     Args:
         history: Kerasの学習履歴オブジェクト
     Returns:
@@ -262,7 +258,6 @@ def plot_history(history):
 def objective(trial, X, Y, input_shape, output_dim):
     """
     Optunaの目的関数.
-
     Args:
         trial: OptunaのTrialオブジェクト
         X, Y: 学習データ
@@ -329,6 +324,7 @@ def objective(trial, X, Y, input_shape, output_dim):
 def main():
     """
     メイン関数.
+
     1. 引数のパース
     2. データの読み込み
     3. 特徴量の抽出
