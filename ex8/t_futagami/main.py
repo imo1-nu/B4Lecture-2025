@@ -96,7 +96,9 @@ class Main:
         dataset_train_valid = datasets.MNIST(
             "./", train=True, download=True, transform=transform
         )  # Separate train data and test data to get a dataset
-        dataset_test = datasets.MNIST("./", train=False, download=True, transform=transform)
+        dataset_test = datasets.MNIST(
+            "./", train=False, download=True, transform=transform
+        )
 
         # Separate the training data and validation data
         size_train_valid = len(dataset_train_valid)
@@ -183,7 +185,9 @@ class Main:
             # print("-----Stop training-----")
 
         # print("-----Start Visualization-----")
-        self.model.load_state_dict(torch.load(f"./params/model_z_{self.z_dim}_h_{self.h_dim}.pth"))
+        self.model.load_state_dict(
+            torch.load(f"./params/model_z_{self.z_dim}_h_{self.h_dim}.pth")
+        )
         self.model.eval()
         self.Visualize.createDirectories()
         self.Visualize.reconstruction()

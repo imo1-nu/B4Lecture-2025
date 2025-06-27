@@ -41,26 +41,77 @@ class VAE(nn.Module):
         self.dec_fc3 = nn.Linear(self.h_dim, self.x_dim)
 
     def encoder(self, x):
-        """# ToDo: Implement the encoder."""
+        """Implement the encoder.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input tensor of shape (batch_size, x_dim).
+        Returns
+        -------
+        tuple
+            A tuple containing the mean and log variance of the latent variable.
+        """
         x = F.relu(self.enc_fc1(x))
         x = F.relu(self.enc_fc2(x))
         return self.enc_fc3_mean(x), self.enc_fc3_logvar(x)
 
     def sample_z(self, mean, log_var, device):
-        """# ToDo: Implement a function to sample latent variables."""
+        """Sample latent variables from the Gaussian distribution.
+
+        Parameters
+        ----------
+        mean : torch.Tensor
+            Mean of the latent variable.
+        log_var : torch.Tensor
+            Log variance of the latent variable.
+        device : torch.device
+            Device to perform the computation on.
+        Returns
+        -------
+        torch.Tensor
+            Sampled latent variable z.
+        """
         epsilon = torch.randn(mean.shape, device=device)
         return mean + epsilon * torch.exp(0.5 * log_var)
 
     def decoder(self, z):
-        """# ToDo: Implement the decoder."""
+        """
+        Implement the decoder.
+
+        Parameters
+        ----------
+        z : torch.Tensor
+            Latent variable tensor of shape (batch_size, z_dim).
+        Returns
+        -------
+        torch.Tensor
+            Reconstructed output tensor of shape (batch_size, x_dim).
+        """
         z = F.relu(self.dec_fc1(z))
         z = F.relu(self.dec_fc2(z))
         z = self.dec_drop(z)
         return torch.sigmoid(self.dec_fc3(z))
 
     def forward(self, x, device):
-        """# ToDo: Implement the forward function to return the following variables."""
-        # return [KL, reconstruction], z, y
+        """
+        Implement the forward function to return the following variables.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input tensor of shape (batch_size, x_dim).
+        device : torch.device
+            Device to perform the computation on.
+        Returns
+        -------
+        list
+            A list containing the KL divergence and reconstruction loss.
+        torch.Tensor
+            Sampled latent variable z.
+        torch.Tensor
+            Reconstructed output tensor y.
+        """
         mean, log_var = self.encoder(x.to(device))
         z = self.sample_z(mean, log_var, device)
         y = self.decoder(z)
